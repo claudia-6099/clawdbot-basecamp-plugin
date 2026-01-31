@@ -72,16 +72,17 @@ If you already have the plugin code locally:
 
 ## Basecamp Setup
 
-### 1. Get your Basecamp Account ID and Project/Chat IDs
+> **Important:** The Account ID, Bucket ID, and Chat ID are only needed ONCE to create the chatbot via Basecamp's API.
+> After creation, the plugin works automatically using `callback_url` from webhooks. You don't need to configure these IDs in Clawdbot.
 
-Find these in your Basecamp URLs:
+### 1. Create a Chatbot in Basecamp
+
+You need to create the chatbot once using Basecamp's API. First, get your IDs from Basecamp URLs:
 - Account ID: `https://3.basecamp.com/[ACCOUNT_ID]/...`
-- Bucket ID (Project): `.../buckets/[BUCKET_ID]/...`
-- Chat ID (Campfire): `.../chats/[CHAT_ID]`
+- Bucket ID: `.../buckets/[BUCKET_ID]/...` (your project)
+- Chat ID: `.../chats/[CHAT_ID]` (your campfire)
 
-### 2. Create a Chatbot in Basecamp
-
-Use the Basecamp API to create the chatbot:
+Then create the bot:
 
 ```bash
 curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
@@ -93,14 +94,14 @@ curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   https://3.basecampapi.com/ACCOUNT_ID/buckets/BUCKET_ID/chats/CHAT_ID/integrations.json
 ```
 
-**Important:** Replace:
-- `YOUR_ACCESS_TOKEN` - Get from Basecamp OAuth
-- `ACCOUNT_ID` - Your Basecamp account ID
-- `BUCKET_ID` - Your project/bucket ID
-- `CHAT_ID` - Your chat/campfire ID
+Replace:
+- `YOUR_ACCESS_TOKEN` - Get from [Basecamp OAuth](https://github.com/basecamp/api/blob/master/sections/authentication.md)
+- `ACCOUNT_ID`, `BUCKET_ID`, `CHAT_ID` - From your Basecamp URLs
 - `https://your-server.com/basecamp/webhook` - Your public webhook URL
 
-### 3. Expose Webhook Endpoint
+**Note:** The chatbot is created account-wide but you get a unique `lines_url` per project. You don't need to save this URL - the plugin uses `callback_url` from webhooks instead.
+
+### 2. Expose Webhook Endpoint
 
 Your Clawdbot instance needs to be accessible from the internet. Use:
 - **Caddy2** (recommended) - Reverse proxy with automatic HTTPS
