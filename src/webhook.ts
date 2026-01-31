@@ -18,13 +18,16 @@ export function registerWebhookHandler(
   api.registerHttpHandler({
     path: webhookPath,
     method: 'POST',
-    handler: async (req: {body: BasecampWebhookPayload}, res: {status: (code: number) => {json: (data: unknown) => void}}) => {
+    handler: async (req: unknown, res: unknown) => {
+      // Type assertion for request/response
+      const request = req as {body: BasecampWebhookPayload};
+      const response = res as {status: (code: number) => {json: (data: unknown) => void}};
       try {
-        const payload = req.body as BasecampWebhookPayload;
+        const payload = request.body;
         
         // Validate payload
         if (!payload.command || !payload.callback_url || !payload.creator) {
-          res.status(400).json({ error: 'Invalid webhook payload' });
+          response.status(400).json({ error: 'Invalid webhook payload' });
           return;
         }
 
@@ -42,10 +45,10 @@ export function registerWebhookHandler(
         await routeToClawdbot(api, session, payload);
 
         // Always return 200 OK to Basecamp (even if processing fails)
-        res.status(200).json({ ok: true });
+        response.status(200).json({ ok: true });
       } catch (error) {
         api.log.error('[Basecamp] Webhook error', { error });
-        res.status(200).json({ ok: true }); // Still return 200 to Basecamp
+        response.status(200).json({ ok: true }); // Still return 200 to Basecamp
       }
     },
   });
@@ -101,7 +104,8 @@ async function routeToClawdbot(
 
     // Use api.runtime to send message to Clawdbot
     // The response will be handled asynchronously
-    const response = await api.runtime.sendMessage(messageContext);
+    const runtime = api.runtime as {sendMessage: (context: unknown) => Promise<{text?: string}>};
+    const response = await runtime.sendMessage(messageContext);
 
     // Send response back to Basecamp
     if (response && response.text) {

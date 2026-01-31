@@ -27,8 +27,9 @@ export default async function registerBasecampPlugin(api: PluginAPI): Promise<vo
   api.log.info('[Basecamp] Initializing plugin...');
 
   // Load and validate configuration
-  const rawConfig = api.config.channels?.basecamp || {};
-  const config = validateConfig(rawConfig as Partial<BasecampConfig>);
+  const apiConfig = api.config as {channels?: {basecamp?: Partial<BasecampConfig>}};
+  const rawConfig = apiConfig.channels?.basecamp || {};
+  const config = validateConfig(rawConfig);
 
   if (!config.enabled) {
     api.log.info('[Basecamp] Plugin is disabled');
