@@ -9,3 +9,6 @@ dist/
 *.swp
 *.swo
 *~
+coverage/
+.nyc_output/
+*.lcov

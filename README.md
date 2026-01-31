@@ -1,5 +1,8 @@
 # Basecamp Chatbot Plugin for Clawdbot
 
+[![CI](https://github.com/claudia-6099/clawdbot-basecamp-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/claudia-6099/clawdbot-basecamp-plugin/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/claudia-6099/clawdbot-basecamp-plugin/branch/main/graph/badge.svg)](https://codecov.io/gh/claudia-6099/clawdbot-basecamp-plugin)
+
 Integrate Basecamp 3 chatbots as a native Clawdbot messaging channel.
 
 ## Features
@@ -166,6 +169,12 @@ curl -X POST http://localhost:3000/basecamp/webhook \
 
 ## Development
 
+### Setup
+
+```bash
+npm install
+```
+
 ### Build
 
 ```bash
@@ -176,6 +185,35 @@ npm run build
 
 ```bash
 npm run dev
+```
+
+### Testing
+
+Run all tests:
+```bash
+npm test
+```
+
+Watch mode:
+```bash
+npm run test:watch
+```
+
+Coverage report:
+```bash
+npm run test:coverage
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+### Type checking
+
+```bash
+npm run type-check
 ```
 
 ### Project Structure
