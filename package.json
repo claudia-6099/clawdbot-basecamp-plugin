@@ -16,8 +16,10 @@
   "keywords": ["clawdbot", "basecamp", "chatbot", "plugin"],
   "author": "Claudia",
   "license": "MIT",
+  "peerDependencies": {
+    "@clawdbot/plugin-sdk": "*"
+  },
   "dependencies": {
-    "@clawdbot/plugin-sdk": "latest",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
