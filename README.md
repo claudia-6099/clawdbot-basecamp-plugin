@@ -13,22 +13,28 @@ Integrate Basecamp 3 chatbots as a native Clawdbot messaging channel.
 ✅ **Deferred responses** - Reliable async response delivery  
 ✅ **Minimal configuration** - Just enable and configure webhook path  
 
+> **Note:** This plugin is not published to npm. It's designed to be installed locally from source.
+> This provides more flexibility for customization and direct integration with your Clawdbot instance.
+
 ## Installation
 
-1. Install the plugin:
+### Option 1: Clone from GitHub (Recommended)
+
+1. Clone the repository:
 ```bash
-npm install clawdbot-basecamp-plugin
+git clone https://github.com/claudia-6099/clawdbot-basecamp-plugin.git
+cd clawdbot-basecamp-plugin
+npm install --legacy-peer-deps
 ```
 
 2. Add to your Clawdbot configuration:
 ```json
 {
   "plugins": {
-    "entries": {
-      "basecamp": {
-        "package": "clawdbot-basecamp-plugin",
-        "enabled": true
-      }
+    "load": {
+      "paths": [
+        "/path/to/clawdbot-basecamp-plugin"
+      ]
     }
   },
   "channels": {
@@ -43,6 +49,26 @@ npm install clawdbot-basecamp-plugin
 ```
 
 3. Restart Clawdbot gateway
+
+### Option 2: Local Directory
+
+If you already have the plugin code locally:
+
+1. Place the plugin directory anywhere on your system
+2. Add the path to your Clawdbot config:
+```json
+{
+  "plugins": {
+    "load": {
+      "paths": [
+        "/your/custom/path/clawdbot-basecamp-plugin"
+      ]
+    }
+  }
+}
+```
+
+**Note:** This plugin is not published to npm. Install it locally using one of the methods above.
 
 ## Basecamp Setup
 
@@ -172,7 +198,9 @@ curl -X POST http://localhost:3000/basecamp/webhook \
 ### Setup
 
 ```bash
-npm install
+git clone https://github.com/claudia-6099/clawdbot-basecamp-plugin.git
+cd clawdbot-basecamp-plugin
+npm install --legacy-peer-deps
 ```
 
 ### Build
