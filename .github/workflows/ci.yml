@@ -23,7 +23,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
     
     - name: Run type checking
       run: npm run type-check
@@ -54,7 +54,7 @@ jobs:
         node-version: '20.x'
     
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
     
     - name: Run linter
       run: npm run lint
@@ -71,7 +71,7 @@ jobs:
         node-version: '20.x'
     
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
     
     - name: Build
       run: npm run build
