@@ -4,25 +4,25 @@
 
 export interface PluginAPI {
   log: {
-    info: (...args: any[]) => void;
-    debug: (...args: any[]) => void;
-    error: (...args: any[]) => void;
-    warn: (...args: any[]) => void;
+    info: (...args: unknown[]) => void;
+    debug: (...args: unknown[]) => void;
+    error: (...args: unknown[]) => void;
+    warn: (...args: unknown[]) => void;
   };
-  config: any;
-  runtime: any;
-  registerHttpHandler: (handler: any) => void;
-  registerChannel: (channel: any) => void;
+  config: Record<string, unknown>;
+  runtime: unknown;
+  registerHttpHandler: (handler: unknown) => void;
+  registerChannel: (channel: unknown) => void;
   onShutdown: (callback: () => void) => void;
-  processMessage: (context: any) => Promise<any>;
-  getSession: (sessionKey: string) => Promise<any>;
+  processMessage: (context: unknown) => Promise<unknown>;
+  getSession: (sessionKey: string) => Promise<unknown>;
 }
 
 export interface Channel {
   id: string;
   name: string;
-  send: (target: string, message: string, options?: any) => Promise<void>;
-  react?: (target: string, messageId: string, emoji: string) => Promise<void>;
-  delete?: (target: string, messageId: string) => Promise<void>;
+  send: (target: string, message: string, options?: unknown) => Promise<void>;
+  react?: (_target: string, _messageId: string, _emoji: string) => Promise<void>;
+  delete?: (_target: string, _messageId: string) => Promise<void>;
   getCapabilities?: () => string[];
 }

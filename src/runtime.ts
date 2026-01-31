@@ -10,7 +10,7 @@ export function setupRuntime(api: PluginAPI): void {
     /**
      * Send a message to Clawdbot for processing
      */
-    async sendMessage(context: any): Promise<any> {
+    async sendMessage(context: unknown): Promise<unknown> {
       // This would typically route through Clawdbot's message pipeline
       // For now, we'll use the plugin API's messaging system
       return await api.processMessage(context);
@@ -19,7 +19,7 @@ export function setupRuntime(api: PluginAPI): void {
     /**
      * Get session information
      */
-    async getSession(sessionKey: string): Promise<any> {
+    async getSession(sessionKey: string): Promise<unknown> {
       return await api.getSession(sessionKey);
     },
   };

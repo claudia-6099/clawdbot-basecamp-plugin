@@ -18,7 +18,7 @@ export function registerWebhookHandler(
   api.registerHttpHandler({
     path: webhookPath,
     method: 'POST',
-    handler: async (req, res) => {
+    handler: async (req: {body: BasecampWebhookPayload}, res: {status: (code: number) => {json: (data: unknown) => void}}) => {
       try {
         const payload = req.body as BasecampWebhookPayload;
         
