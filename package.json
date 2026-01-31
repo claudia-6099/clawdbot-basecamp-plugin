@@ -1,0 +1,23 @@
+{
+  "name": "clawdbot-basecamp-plugin",
+  "version": "1.0.0",
+  "description": "Basecamp chatbot integration plugin for Clawdbot",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["clawdbot", "basecamp", "chatbot", "plugin"],
+  "author": "Claudia",
+  "license": "MIT",
+  "dependencies": {
+    "@clawdbot/plugin-sdk": "latest",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/node-fetch": "^2.6.11",
+    "typescript": "^5.0.0"
+  }
+}

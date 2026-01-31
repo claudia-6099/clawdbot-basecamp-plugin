@@ -1,0 +1,26 @@
+{
+  "id": "basecamp",
+  "channels": ["basecamp"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "botName": {
+        "type": "string",
+        "default": "claudia"
+      },
+      "webhookPath": {
+        "type": "string",
+        "default": "/basecamp/webhook"
+      },
+      "port": {
+        "type": "number",
+        "default": 3000
+      }
+    }
+  }
+}
