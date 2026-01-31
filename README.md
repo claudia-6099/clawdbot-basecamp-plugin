@@ -122,23 +122,28 @@ your-domain.com {
 
 ## Usage
 
-### In Basecamp Campfires
+### In Basecamp Campfires (Group Chats)
 
-Mention the bot to interact:
+Use `!` prefix to invoke the bot:
 ```
-@claudia What's the weather today?
+!claudia What's the weather today?
 ```
 
-### Direct Pings
+### Direct Pings (Private Messages)
 
-Send a direct ping/message to the bot in Basecamp for private conversations.
+Just type your message directly - no prefix needed:
+```
+What's the weather today?
+```
+
+The bot will respond automatically in both cases.
 
 ## How It Works
 
-1. **User mentions bot** in Basecamp → Basecamp sends webhook to your server
+1. **User invokes bot** (`!claudia` in Campfires or direct message in Pings) → Basecamp sends webhook to your server
 2. **Plugin receives webhook** → Extracts message and callback URL
 3. **Routes to Clawdbot** → Processes message through AI
-4. **Sends response** → POSTs formatted HTML back to Basecamp
+4. **Sends response** → POSTs formatted HTML back to Basecamp via callback URL
 
 ## Session Management
 
