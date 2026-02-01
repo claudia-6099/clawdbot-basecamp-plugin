@@ -1,7 +1,7 @@
 {
-  "name": "clawdbot-basecamp-plugin",
+  "name": "@openclaw/basecamp",
   "version": "1.0.0",
-  "description": "Basecamp chatbot integration plugin for Clawdbot",
+  "description": "Basecamp 3 chatbot integration channel for OpenClaw",
   "main": "index.ts",
   "type": "module",
   "scripts": {
@@ -13,11 +13,11 @@
     "lint": "eslint . --ext .ts",
     "type-check": "tsc --noEmit"
   },
-  "keywords": ["clawdbot", "basecamp", "chatbot", "plugin"],
+  "keywords": ["openclaw", "basecamp", "chatbot", "channel", "plugin"],
   "author": "Claudia",
   "license": "MIT",
   "peerDependencies": {
-    "@clawdbot/plugin-sdk": "*"
+    "openclaw": "workspace:*"
   },
   "dependencies": {
     "node-fetch": "^2.7.0"
@@ -47,9 +47,9 @@
       "aliases": ["bc", "basecamp3"]
     },
     "install": {
-      "npmSpec": "clawdbot-basecamp-plugin",
-      "localPath": "/Users/clawd/clawd/clawdbot-basecamp-plugin",
-      "defaultChoice": "local"
+      "npmSpec": "@openclaw/basecamp",
+      "localPath": "extensions/basecamp",
+      "defaultChoice": "npm"
     }
   }
 }

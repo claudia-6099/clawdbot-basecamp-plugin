@@ -1,65 +1,73 @@
-import type { PluginAPI } from '@clawdbot/plugin-sdk';
-import { basecampChannel } from './src/channel.js';
-import { registerWebhookHandler, cleanupOldSessions } from './src/webhook.js';
-import { setupRuntime } from './src/runtime.js';
+import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
+import { createBasecampChannel } from './src/channel.js';
+import { cleanupOldSessions } from './src/webhook.js';
 import { validateConfig } from './src/config-schema.js';
 import type { BasecampConfig } from './src/types.js';
 
 /**
  * Basecamp Chatbot Plugin for OpenClaw
- * 
+ *
  * Integrates Basecamp 3 chatbots as a native OpenClaw channel.
- * 
+ *
  * @example
  * // In your OpenClaw config:
  * {
- *   channels: {
- *     basecamp: {
- *       enabled: true,
- *       botName: "claudia",
- *       webhookPath: "/basecamp/webhook",
- *       port: 3000
+ *   plugins: {
+ *     entries: {
+ *       basecamp: {
+ *         enabled: true,
+ *         config: {
+ *           botName: "claudia",
+ *           webhookPath: "/basecamp/webhook",
+ *           port: 3000
+ *         }
+ *       }
  *     }
  *   }
  * }
  */
-export default async function registerBasecampPlugin(api: PluginAPI): Promise<void> {
-  api.log.info('[Basecamp] Initializing plugin...');
+export default {
+  id: 'basecamp',
+  name: 'Basecamp Channel',
+  description: 'Basecamp 3 chatbot integration channel for OpenClaw',
 
-  // Load and validate configuration
-  const apiConfig = api.config as {channels?: {basecamp?: Partial<BasecampConfig>}};
-  const rawConfig = apiConfig.channels?.basecamp || {};
-  const config = validateConfig(rawConfig);
+  register(api: OpenClawPluginApi) {
+    const log = api.runtime.logging.getChildLogger('basecamp');
+    log.info('Initializing plugin...');
 
-  if (!config.enabled) {
-    api.log.info('[Basecamp] Plugin is disabled');
-    return;
-  }
+    // Load and validate configuration
+    const entries = (api.config as { plugins?: { entries?: Record<string, { config?: Partial<BasecampConfig> }> } })
+      .plugins?.entries;
+    const rawConfig = entries?.basecamp?.config ?? {};
+    const config = validateConfig(rawConfig);
 
-  api.log.info('[Basecamp] Plugin configuration:', config);
+    if (!config.enabled) {
+      log.info('Plugin is disabled');
+      return;
+    }
 
-  // Setup runtime bridge
-  setupRuntime(api);
+    log.info('Plugin configuration:', config);
 
-  // Register webhook handler
-  registerWebhookHandler(api, config.webhookPath);
+    // Register channel implementation with gateway webhook handling
+    api.registerChannel({ plugin: createBasecampChannel(config, log) });
 
-  // Register channel implementation
-  api.registerChannel({ plugin: basecampChannel });
+    // Setup periodic session cleanup via registered service
+    let cleanupInterval: ReturnType<typeof setInterval> | undefined;
+    api.registerService({
+      id: 'basecamp-cleanup',
+      start() {
+        cleanupInterval = setInterval(() => {
+          log.debug('Cleaning up old sessions...');
+          cleanupOldSessions(24 * 60 * 60 * 1000); // 24 hours
+        }, 6 * 60 * 60 * 1000);
+      },
+      stop() {
+        if (cleanupInterval) clearInterval(cleanupInterval);
+        log.info('Plugin shutdown complete');
+      },
+    });
 
-  // Setup periodic session cleanup (every 6 hours)
-  const cleanupInterval = setInterval(() => {
-    api.log.debug('[Basecamp] Cleaning up old sessions...');
-    cleanupOldSessions(24 * 60 * 60 * 1000); // 24 hours
-  }, 6 * 60 * 60 * 1000);
-
-  // Cleanup on shutdown
-  api.onShutdown(() => {
-    clearInterval(cleanupInterval);
-    api.log.info('[Basecamp] Plugin shutdown complete');
-  });
-
-  api.log.info('[Basecamp] Plugin initialized successfully');
-  api.log.info(`[Basecamp] Webhook endpoint: ${config.webhookPath}`);
-  api.log.info(`[Basecamp] Bot name: ${config.botName}`);
-}
+    log.info('Plugin initialized successfully');
+    log.info(`Bot name: ${config.botName}`);
+  },
+};

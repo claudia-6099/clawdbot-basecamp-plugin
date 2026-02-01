@@ -1,6 +1,4 @@
-import type { PluginAPI } from '@clawdbot/plugin-sdk';
 import type { BasecampWebhookPayload, BasecampSession } from './types.js';
-import { sendToBasecamp } from './send.js';
 
 /**
  * Session storage (in-memory)
@@ -8,52 +6,71 @@ import { sendToBasecamp } from './send.js';
  */
 const sessions = new Map<string, BasecampSession>();
 
+interface Logger {
+  info: (...args: unknown[]) => void;
+  debug: (...args: unknown[]) => void;
+  error: (...args: unknown[]) => void;
+}
+
+export interface InboundMessage {
+  channel: string;
+  sessionKey: string;
+  replyTarget: string;
+  from: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  text: string;
+  timestamp: number;
+}
+
 /**
- * Register webhook handler with Clawdbot
+ * Handle incoming Basecamp webhook payload.
+ * Parses the payload and returns the inbound message context
+ * for the OpenClaw gateway framework to route to the agent.
  */
-export function registerWebhookHandler(
-  api: PluginAPI,
-  webhookPath: string
-): void {
-  api.registerHttpHandler({
-    path: webhookPath,
-    method: 'POST',
-    handler: async (req: unknown, res: unknown) => {
-      // Type assertion for request/response
-      const request = req as {body: BasecampWebhookPayload};
-      const response = res as {status: (code: number) => {json: (data: unknown) => void}};
-      try {
-        const payload = request.body;
-        
-        // Validate payload
-        if (!payload.command || !payload.callback_url || !payload.creator) {
-          response.status(400).json({ error: 'Invalid webhook payload' });
-          return;
-        }
+export async function handleWebhook(
+  log: Logger,
+  rawPayload: unknown,
+): Promise<{ ok: boolean; error?: string; message?: InboundMessage }> {
+  try {
+    const payload = rawPayload as BasecampWebhookPayload;
 
-        // Log incoming message
-        api.log.info('[Basecamp] Received message', {
-          from: payload.creator.name,
-          command: payload.command,
-          callbackUrl: payload.callback_url,
-        });
+    // Validate payload
+    if (!payload.command || !payload.callback_url || !payload.creator) {
+      return { ok: false, error: 'Invalid webhook payload' };
+    }
 
-        // Get or create session
-        const session = getOrCreateSession(payload);
+    // Log incoming message
+    log.info('Received message', {
+      from: payload.creator.name,
+      command: payload.command,
+      callbackUrl: payload.callback_url,
+    });
 
-        // Route message to Clawdbot
-        await routeToClawdbot(api, session, payload);
+    // Get or create session
+    const session = getOrCreateSession(payload);
 
-        // Always return 200 OK to Basecamp (even if processing fails)
-        response.status(200).json({ ok: true });
-      } catch (error) {
-        api.log.error('[Basecamp] Webhook error', { error });
-        response.status(200).json({ ok: true }); // Still return 200 to Basecamp
-      }
-    },
-  });
-
-  api.log.info(`[Basecamp] Webhook registered at ${webhookPath}`);
+    return {
+      ok: true,
+      message: {
+        channel: 'basecamp',
+        sessionKey: session.sessionId,
+        replyTarget: session.callbackUrl,
+        from: {
+          id: payload.creator.id.toString(),
+          name: payload.creator.name,
+          email: payload.creator.email_address,
+        },
+        text: payload.command,
+        timestamp: Date.now(),
+      },
+    };
+  } catch (error) {
+    log.error('Webhook error', { error });
+    return { ok: false, error: 'Internal error processing webhook' };
+  }
 }
 
 /**
@@ -61,9 +78,9 @@ export function registerWebhookHandler(
  */
 function getOrCreateSession(payload: BasecampWebhookPayload): BasecampSession {
   const sessionId = payload.callback_url;
-  
+
   let session = sessions.get(sessionId);
-  
+
   if (!session) {
     session = {
       sessionId,
@@ -74,52 +91,10 @@ function getOrCreateSession(payload: BasecampWebhookPayload): BasecampSession {
     sessions.set(sessionId, session);
   } else {
     session.lastActive = Date.now();
-    session.creator = payload.creator; // Update creator info
+    session.creator = payload.creator;
   }
-  
+
   return session;
-}
-
-/**
- * Route message to Clawdbot for processing
- */
-async function routeToClawdbot(
-  api: PluginAPI,
-  session: BasecampSession,
-  payload: BasecampWebhookPayload
-): Promise<void> {
-  try {
-    // Build message context for Clawdbot
-    const messageContext = {
-      channel: 'basecamp',
-      sessionKey: session.sessionId,
-      from: {
-        id: payload.creator.id.toString(),
-        name: payload.creator.name,
-        email: payload.creator.email_address,
-      },
-      text: payload.command,
-      timestamp: Date.now(),
-    };
-
-    // Use api.runtime to send message to Clawdbot
-    // The response will be handled asynchronously
-    const runtime = api.runtime as {sendMessage: (context: unknown) => Promise<{text?: string}>};
-    const response = await runtime.sendMessage(messageContext);
-
-    // Send response back to Basecamp
-    if (response && response.text) {
-      await sendToBasecamp(session.callbackUrl, response.text);
-    }
-  } catch (error) {
-    api.log.error('[Basecamp] Error routing to Clawdbot', { error });
-    
-    // Send error message to Basecamp
-    await sendToBasecamp(
-      session.callbackUrl,
-      '<p>❌ Sorry, something went wrong processing your message.</p>'
-    );
-  }
 }
 
 /**

@@ -4,6 +4,7 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^openclaw/plugin-sdk$': '<rootDir>/src/__mocks__/openclaw/plugin-sdk.ts',
   },
   transform: {
     '^.+\\.ts$': [
@@ -21,16 +22,7 @@ export default {
     'src/**/*.ts',
     'index.ts',
     '!src/**/*.d.ts',
-    '!**/__tests__/**'
+    '!**/__tests__/**',
+    '!src/__mocks__/**'
   ],
-  // Coverage thresholds disabled for initial release
-  // Can be enabled as test coverage improves
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 30,
-  //     functions: 30,
-  //     lines: 20,
-  //     statements: 20
-  //   }
-  // }
 };
