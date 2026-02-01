@@ -5,16 +5,6 @@
 
 Integrate Basecamp 3 chatbots as a native OpenClaw messaging channel.
 
-## ⚠️ Migration Note (v1.0.0)
-
-This plugin has been fully migrated to the **OpenClaw** plugin SDK (formerly Clawdbot):
-- Plugin entry point uses the object export with `register(api: OpenClawPluginApi)`
-- Imports from `openclaw/plugin-sdk` (replaces `@clawdbot/plugin-sdk`)
-- Lifecycle managed via `api.registerService()` instead of `api.onShutdown()`
-- Logging via `api.runtime.logging.getChildLogger()` instead of `api.log`
-- Channel uses factory pattern with `gateway` property for webhook handling
-- Config lives under `plugins.entries.basecamp.config` (not `channels.basecamp`)
-
 ## Features
 
 ✅ **Webhook-based messaging** - Receives messages from Basecamp via webhooks  
@@ -273,7 +263,7 @@ npm run lint
 **Error:** `unknown channel id: basecamp`
 
 **Solution:**
-1. Verify `channels.basecamp` exists in config
+1. Verify `plugins.entries.basecamp` exists in config
 2. Check plugin is enabled: `openclaw plugins list`
 3. Verify `openclaw.channel` metadata in package.json
 
@@ -307,41 +297,6 @@ curl -X POST http://localhost:3000/basecamp/webhook \
 1. Check OpenClaw logs: `openclaw gateway logs`
 2. Verify plugin loaded: `openclaw plugins info basecamp`
 3. Test send manually using the callback URL
-
-## Migration from Clawdbot
-
-If you're upgrading from an older version that used the `@clawdbot/plugin-sdk`:
-
-1. **Pull latest code:**
-   ```bash
-   git pull origin main
-   npm install --legacy-peer-deps
-   ```
-
-2. **Update your OpenClaw config** — channel config moved from `channels.basecamp` to `plugins.entries.basecamp.config`:
-   ```diff
-   - "channels": {
-   -   "basecamp": {
-   -     "enabled": true,
-   -     "botName": "claudia"
-   -   }
-   - }
-   + "plugins": {
-   +   "entries": {
-   +     "basecamp": {
-   +       "enabled": true,
-   +       "config": {
-   +         "botName": "claudia"
-   +       }
-   +     }
-   +   }
-   + }
-   ```
-
-3. **Restart gateway:**
-   ```bash
-   openclaw gateway restart
-   ```
 
 ## Resources
 
