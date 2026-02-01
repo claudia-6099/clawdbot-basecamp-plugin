@@ -9,6 +9,9 @@ export async function sendToBasecamp(
   callbackUrl: string,
   content: string
 ): Promise<void> {
+  console.log('[Basecamp] Sending message to:', callbackUrl);
+  console.log('[Basecamp] Content length:', content.length);
+
   const payload: BasecampLinePayload = {
     content: formatAsHtml(content)
   };
@@ -21,11 +24,15 @@ export async function sendToBasecamp(
     body: JSON.stringify(payload),
   });
 
+  console.log('[Basecamp] Response status:', response.status);
+
   if (!response.ok) {
-    throw new Error(
-      `Failed to send to Basecamp: ${response.status} ${response.statusText}`
-    );
+    const errorMsg = `Failed to send to Basecamp: ${response.status} ${response.statusText}`;
+    console.error('[Basecamp] Error:', errorMsg);
+    throw new Error(errorMsg);
   }
+
+  console.log('[Basecamp] Message sent successfully');
 }
 
 /**

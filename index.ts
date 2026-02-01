@@ -12,16 +12,11 @@ import type { BasecampConfig } from './src/types.js';
  * @example
  * // In your OpenClaw config:
  * {
- *   plugins: {
- *     entries: {
- *       basecamp: {
- *         enabled: true,
- *         config: {
- *           botName: "claudia",
- *           webhookPath: "/basecamp/webhook",
- *           port: 3000
- *         }
- *       }
+ *   channels: {
+ *     basecamp: {
+ *       enabled: true,
+ *       botName: "claudia",
+ *       webhookPath: "/basecamp/webhook"
  *     }
  *   }
  * }
@@ -36,9 +31,9 @@ export default {
     log.info('Initializing plugin...');
 
     // Load and validate configuration
-    const entries = (api.config as { plugins?: { entries?: Record<string, { config?: Partial<BasecampConfig> }> } })
-      .plugins?.entries;
-    const rawConfig = entries?.basecamp?.config ?? {};
+    const channelsConfig = (api.config as { channels?: { basecamp?: Partial<BasecampConfig> } })
+      .channels;
+    const rawConfig = channelsConfig?.basecamp ?? {};
     const config = validateConfig(rawConfig);
 
     if (!config.enabled) {

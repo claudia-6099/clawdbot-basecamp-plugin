@@ -1,5 +1,5 @@
 import { sendToBasecamp } from './send.js';
-import { handleWebhook } from './webhook.js';
+import { monitorBasecampProvider } from './monitor.js';
 import type { BasecampConfig } from './types.js';
 
 interface Logger {
@@ -54,6 +54,15 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
         botName: config.botName,
         webhookPath: config.webhookPath,
         port: config.port,
+        config: config,
+      }),
+      isConfigured: () => config.enabled && Boolean(config.webhookPath),
+      describeAccount: (account: any) => ({
+        accountId: account.accountId || 'default',
+        name: account.botName || config.botName,
+        enabled: config.enabled,
+        configured: true,
+        webhookPath: config.webhookPath,
       }),
     },
     outbound: {
@@ -71,8 +80,22 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
       },
     },
     gateway: {
-      webhookPath: config.webhookPath,
-      handleWebhook: (payload: unknown) => handleWebhook(log, payload),
+      startAccount: async (ctx: any) => {
+        const accountId = ctx.accountId ?? 'default';
+        log.info(`Starting Basecamp channel for account: ${accountId}`);
+
+        // Start monitoring webhooks
+        const cleanup = await monitorBasecampProvider({
+          config,
+          log,
+          accountId,
+          runtime: ctx.runtime,
+          cfg: ctx.cfg,
+          abortSignal: ctx.abortSignal,
+        });
+
+        return cleanup;
+      },
     },
   };
 }
