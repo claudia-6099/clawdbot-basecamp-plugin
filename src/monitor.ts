@@ -71,6 +71,9 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         const body = Buffer.concat(chunks).toString('utf8');
         const payload = JSON.parse(body);
 
+        // Debug: Log the full payload to see structure
+        log.info(`[${accountId}] Webhook payload: ${JSON.stringify(payload, null, 2)}`);
+
         // Validate payload
         if (!payload.command || !payload.callback_url || !payload.creator) {
           res.statusCode = 400;
@@ -79,7 +82,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           return;
         }
 
-        log.info(`[${accountId}] Received message from ${payload.creator.name}`);
+        log.info(`[${accountId}] Received message from ${payload.creator.name}: command="${payload.command}"`);
 
         // Respond with 204 No Content since we'll send response via callback_url
         // (Basecamp displays any immediate response in chat, so we return nothing)
@@ -87,15 +90,22 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         res.end();
 
         // Build context payload for OpenClaw
+        // OpenClaw expects Body/RawBody/CommandBody (not Text)
+        // Create unique session per person by combining callback_url + creator.id
+        const sessionId = `${payload.callback_url}:user:${payload.creator.id}`;
         const ctxPayload = {
-          From: payload.callback_url, // Use callback_url as the "from" identifier
+          From: sessionId, // Unique session per person
           UserName: payload.creator.name,
           UserEmail: payload.creator.email_address,
           UserId: payload.creator.id.toString(),
-          Text: payload.command,
+          Body: payload.command,
+          RawBody: payload.command,
+          CommandBody: payload.command,
           Channel: 'basecamp',
           AccountId: accountId,
         };
+
+        log.info(`[${accountId}] Dispatching to agent with Body="${ctxPayload.Body}"`);
 
         // Dispatch to agent system and stream responses back
         await dispatchReplyWithBufferedBlockDispatcher({
