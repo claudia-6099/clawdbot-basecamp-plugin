@@ -81,10 +81,10 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
         log.info(`[${accountId}] Received message from ${payload.creator.name}`);
 
-        // Respond immediately with 200 to avoid Basecamp timeout
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ status: 'ok' }));
+        // Respond with 204 No Content since we'll send response via callback_url
+        // (Basecamp displays any immediate response in chat, so we return nothing)
+        res.statusCode = 204;
+        res.end();
 
         // Build context payload for OpenClaw
         const ctxPayload = {
