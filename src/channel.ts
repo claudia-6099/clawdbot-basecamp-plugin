@@ -1,47 +1,67 @@
-import type { Channel } from '@clawdbot/plugin-sdk';
 import { sendToBasecamp } from './send.js';
 
 /**
- * Basecamp Channel implementation
- * Implements the Clawdbot Channel interface for Basecamp integration
+ * Basecamp Channel Plugin implementation
+ * Implements the OpenClaw Channel interface for Basecamp integration
  */
-export const basecampChannel: Channel = {
+export const basecampChannel = {
   id: 'basecamp',
-  name: 'Basecamp',
-  
-  /**
-   * Send a message to Basecamp
-   * @param target - callback_url (from webhook)
-   * @param message - message text
-   * @param _options - additional options (unused)
-   */
-  async send(target: string, message: string, _options?: unknown): Promise<void> {
-    await sendToBasecamp(target, message);
+  meta: {
+    id: 'basecamp',
+    label: 'Basecamp',
+    selectionLabel: 'Basecamp 3 Chatbots',
+    docsPath: '/channels/basecamp',
+    docsLabel: 'basecamp',
+    blurb: 'Integrate with Basecamp 3 chatbots via webhooks.',
+    aliases: ['bc', 'basecamp3'],
   },
-  
-  /**
-   * React to a message (not supported by Basecamp)
-   */
-  async react(_target: string, _messageId: string, _emoji: string): Promise<void> {
-    throw new Error('Reactions are not supported by Basecamp chatbots');
+  capabilities: {
+    chatTypes: ['direct'],
+    media: {
+      images: false,
+      videos: false,
+      audio: false,
+      files: false,
+    },
+    formatting: {
+      markdown: true,
+      html: true,
+    },
+    features: {
+      reactions: false,
+      threads: false,
+      editing: false,
+      deletion: false,
+    },
   },
-  
-  /**
-   * Delete a message (not supported by Basecamp)
-   */
-  async delete(_target: string, _messageId: string): Promise<void> {
-    throw new Error('Message deletion is not supported by Basecamp chatbots');
+  config: {
+    listAccountIds: (cfg: any) => {
+      const basecampConfig = cfg.channels?.basecamp;
+      return basecampConfig?.enabled ? ['default'] : [];
+    },
+    resolveAccount: (cfg: any, accountId?: string) => {
+      const basecampConfig = cfg.channels?.basecamp;
+      return {
+        accountId: accountId ?? 'default',
+        enabled: basecampConfig?.enabled ?? false,
+        botName: basecampConfig?.botName ?? 'claudia',
+        webhookPath: basecampConfig?.webhookPath ?? '/basecamp/webhook',
+        port: basecampConfig?.port ?? 3000,
+      };
+    },
   },
-  
-  /**
-   * Get channel capabilities
-   */
-  getCapabilities(): string[] {
-    return [
-      'send',
-      'html_formatting',
-      'tables',
-      'details_summary',
-    ];
+  outbound: {
+    deliveryMode: 'direct' as const,
+    sendText: async ({ text, target }: { text: string; target: string }) => {
+      try {
+        await sendToBasecamp(target, text);
+        return { ok: true };
+      } catch (error) {
+        return { 
+          ok: false, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        };
+      }
+    },
   },
 };

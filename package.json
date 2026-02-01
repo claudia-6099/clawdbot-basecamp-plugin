@@ -33,5 +33,23 @@
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
+  },
+  "openclaw": {
+    "extensions": ["./index.ts"],
+    "channel": {
+      "id": "basecamp",
+      "label": "Basecamp",
+      "selectionLabel": "Basecamp 3 Chatbots",
+      "docsPath": "/channels/basecamp",
+      "docsLabel": "basecamp",
+      "blurb": "Integrate with Basecamp 3 chatbots via webhooks.",
+      "order": 70,
+      "aliases": ["bc", "basecamp3"]
+    },
+    "install": {
+      "npmSpec": "clawdbot-basecamp-plugin",
+      "localPath": "/Users/clawd/clawd/clawdbot-basecamp-plugin",
+      "defaultChoice": "local"
+    }
   }
 }

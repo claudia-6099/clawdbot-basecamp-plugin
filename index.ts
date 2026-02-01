@@ -6,12 +6,12 @@ import { validateConfig } from './src/config-schema.js';
 import type { BasecampConfig } from './src/types.js';
 
 /**
- * Basecamp Chatbot Plugin for Clawdbot
+ * Basecamp Chatbot Plugin for OpenClaw
  * 
- * Integrates Basecamp 3 chatbots as a native Clawdbot channel.
+ * Integrates Basecamp 3 chatbots as a native OpenClaw channel.
  * 
  * @example
- * // In your Clawdbot config:
+ * // In your OpenClaw config:
  * {
  *   channels: {
  *     basecamp: {
@@ -45,7 +45,7 @@ export default async function registerBasecampPlugin(api: PluginAPI): Promise<vo
   registerWebhookHandler(api, config.webhookPath);
 
   // Register channel implementation
-  api.registerChannel(basecampChannel);
+  api.registerChannel({ plugin: basecampChannel });
 
   // Setup periodic session cleanup (every 6 hours)
   const cleanupInterval = setInterval(() => {
