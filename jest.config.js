@@ -18,6 +18,10 @@ export default {
     '**/__tests__/**/*.ts',
     '**/?(*.)+(spec|test).ts'
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/'
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     'index.ts',
