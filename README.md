@@ -7,11 +7,13 @@ Integrate Basecamp 3 chatbots as a native OpenClaw messaging channel.
 
 ## ⚠️ Migration Note (v1.0.0)
 
-This plugin has been updated to work with **OpenClaw** (the new name for Clawdbot). The plugin structure has been migrated to follow OpenClaw's plugin architecture:
-- ✅ Manifest renamed from `clawdbot.plugin.json` to `openclaw.plugin.json`
-- ✅ Updated channel registration to new OpenClaw format
-- ✅ Added OpenClaw metadata to package.json
-- ✅ Enhanced config schema with UI hints
+This plugin has been fully migrated to the **OpenClaw** plugin SDK (formerly Clawdbot):
+- Plugin entry point uses the object export with `register(api: OpenClawPluginApi)`
+- Imports from `openclaw/plugin-sdk` (replaces `@clawdbot/plugin-sdk`)
+- Lifecycle managed via `api.registerService()` instead of `api.onShutdown()`
+- Logging via `api.runtime.logging.getChildLogger()` instead of `api.log`
+- Channel uses factory pattern with `gateway` property for webhook handling
+- Config lives under `plugins.entries.basecamp.config` (not `channels.basecamp`)
 
 ## Features
 
@@ -40,6 +42,11 @@ cd clawdbot-basecamp-plugin
 npm install --legacy-peer-deps
 ```
 
+Or install via the OpenClaw CLI:
+```bash
+openclaw plugins install @openclaw/basecamp
+```
+
 ### Step 2: Add to OpenClaw Configuration
 
 Add the plugin path and channel configuration to your OpenClaw config:
@@ -49,21 +56,19 @@ Add the plugin path and channel configuration to your OpenClaw config:
   "plugins": {
     "load": {
       "paths": [
-        "/path/to/clawdbot-basecamp-plugin"
+        "/path/to/openclaw-basecamp-plugin"
       ]
     },
     "entries": {
       "basecamp": {
-        "enabled": true
+        "enabled": true,
+        "config": {
+          "enabled": true,
+          "botName": "claudia",
+          "webhookPath": "/basecamp/webhook",
+          "port": 3000
+        }
       }
-    }
-  },
-  "channels": {
-    "basecamp": {
-      "enabled": true,
-      "botName": "claudia",
-      "webhookPath": "/basecamp/webhook",
-      "port": 3000
     }
   }
 }
@@ -71,8 +76,8 @@ Add the plugin path and channel configuration to your OpenClaw config:
 
 **Important paths:**
 - Use absolute path in `plugins.load.paths`
-- Example: `"/Users/arturo/projects/clawdbot-basecamp-plugin"`
-- Or environment variable: `"${HOME}/clawdbot-basecamp-plugin"`
+- Example: `"/Users/arturo/projects/openclaw-basecamp-plugin"`
+- Or install via npm and skip `load.paths` entirely
 
 ### Step 3: Restart OpenClaw Gateway
 
@@ -144,9 +149,11 @@ The bot should respond via OpenClaw!
 **Minimal (defaults):**
 ```json
 {
-  "channels": {
-    "basecamp": {
-      "enabled": true
+  "plugins": {
+    "entries": {
+      "basecamp": {
+        "enabled": true
+      }
     }
   }
 }
@@ -155,11 +162,15 @@ The bot should respond via OpenClaw!
 **Custom bot name:**
 ```json
 {
-  "channels": {
-    "basecamp": {
-      "enabled": true,
-      "botName": "assistant",
-      "webhookPath": "/webhook/basecamp"
+  "plugins": {
+    "entries": {
+      "basecamp": {
+        "enabled": true,
+        "config": {
+          "botName": "assistant",
+          "webhookPath": "/webhook/basecamp"
+        }
+      }
     }
   }
 }
@@ -213,17 +224,16 @@ The bot should respond via OpenClaw!
 ### Project Structure
 
 ```
-clawdbot-basecamp-plugin/
-├── index.ts                 # Plugin entry point
-├── openclaw.plugin.json     # Plugin manifest (OpenClaw format)
+openclaw-basecamp-plugin/
+├── index.ts                 # Plugin entry point (object export with register)
+├── openclaw.plugin.json     # Plugin manifest
 ├── package.json             # Dependencies + OpenClaw metadata
 ├── src/
-│   ├── channel.ts          # Channel implementation
-│   ├── webhook.ts          # Webhook handler
-│   ├── send.ts             # Message sending
-│   ├── runtime.ts          # Runtime bridge
-│   ├── config-schema.ts    # Config validation
-│   └── types.ts            # TypeScript types
+│   ├── channel.ts          # Channel factory with gateway webhook handling
+│   ├── webhook.ts          # Webhook payload parsing & session management
+│   ├── send.ts             # Message formatting & sending
+│   ├── config-schema.ts    # Config validation & defaults
+│   └── types.ts            # TypeScript interfaces
 └── README.md
 ```
 
@@ -300,25 +310,38 @@ curl -X POST http://localhost:3000/basecamp/webhook \
 
 ## Migration from Clawdbot
 
-If you're upgrading from an older version that used `clawdbot.plugin.json`:
+If you're upgrading from an older version that used the `@clawdbot/plugin-sdk`:
 
 1. **Pull latest code:**
    ```bash
-   cd clawdbot-basecamp-plugin
    git pull origin main
    npm install --legacy-peer-deps
    ```
 
-2. **Update config references:**
-   - Old: `clawdbot gateway restart`
-   - New: `openclaw gateway restart`
+2. **Update your OpenClaw config** — channel config moved from `channels.basecamp` to `plugins.entries.basecamp.config`:
+   ```diff
+   - "channels": {
+   -   "basecamp": {
+   -     "enabled": true,
+   -     "botName": "claudia"
+   -   }
+   - }
+   + "plugins": {
+   +   "entries": {
+   +     "basecamp": {
+   +       "enabled": true,
+   +       "config": {
+   +         "botName": "claudia"
+   +       }
+   +     }
+   +   }
+   + }
+   ```
 
 3. **Restart gateway:**
    ```bash
    openclaw gateway restart
    ```
-
-The plugin manifest and structure have been automatically updated to OpenClaw format.
 
 ## Resources
 
