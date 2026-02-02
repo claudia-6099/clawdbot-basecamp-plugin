@@ -1,5 +1,4 @@
 import fetch from 'node-fetch';
-import type { BasecampLinePayload } from './types.js';
 
 /**
  * Send a message to Basecamp
