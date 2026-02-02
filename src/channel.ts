@@ -57,6 +57,7 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
         config: config,
       }),
       isConfigured: () => config.enabled && Boolean(config.webhookPath),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       describeAccount: (account: any) => ({
         accountId: account.accountId || 'default',
         name: account.botName || config.botName,
@@ -80,6 +81,7 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
       },
     },
     gateway: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       startAccount: async (ctx: any) => {
         const accountId = ctx.accountId ?? 'default';
         log.info(`Starting Basecamp channel for account: ${accountId}`);
@@ -89,7 +91,6 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
           config,
           log,
           accountId,
-          runtime: ctx.runtime,
           cfg: ctx.cfg,
           abortSignal: ctx.abortSignal,
         });

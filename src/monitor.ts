@@ -13,8 +13,8 @@ interface MonitorParams {
   config: BasecampConfig;
   log: Logger;
   accountId: string;
-  runtime: any;
-  cfg: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cfg: any; // OpenClaw config object - type not exported by SDK
   abortSignal?: AbortSignal;
 }
 
@@ -78,18 +78,19 @@ function isValidBasecampCallback(callbackUrl: string): boolean {
  * Registers HTTP handler and processes incoming webhook requests
  */
 export async function monitorBasecampProvider(params: MonitorParams): Promise<() => void> {
-  const { config, log, accountId, runtime, cfg, abortSignal } = params;
+  const { config, log, accountId, cfg, abortSignal } = params;
 
   log.info(`[${accountId}] Starting Basecamp webhook monitor`);
 
-  // Import OpenClaw functions
-  // @ts-ignore
+  // Import OpenClaw functions dynamically (required for plugin runtime loading)
+  // OpenClaw internal modules don't have published TypeScript types
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { registerPluginHttpRoute } = require('/home/ec2-user/.npm-global/lib/node_modules/openclaw/dist/plugins/http-registry.js');
 
-  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { normalizePluginHttpPath } = require('/home/ec2-user/.npm-global/lib/node_modules/openclaw/dist/plugins/http-path.js');
 
-  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { dispatchReplyWithBufferedBlockDispatcher } = require('/home/ec2-user/.npm-global/lib/node_modules/openclaw/dist/auto-reply/reply/provider-dispatcher.js');
 
   const normalizedPath = normalizePluginHttpPath(config.webhookPath, '/basecamp/webhook') ?? '/basecamp/webhook';
@@ -191,6 +192,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           ctx: ctxPayload,
           cfg,
           dispatcherOptions: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             deliver: async (deliveryPayload: any) => {
               if (deliveryPayload.text) {
                 log.info(`[${accountId}] Delivering response to ${payload.callback_url}`);
@@ -203,6 +205,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
                 }
               }
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any, info: any) => {
               log.error(`[${accountId}] ${info.kind} reply failed`, { error: err });
             },
