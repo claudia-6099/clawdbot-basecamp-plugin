@@ -183,6 +183,9 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           CommandBody: payload.command,
           Channel: 'basecamp',
           AccountId: accountId,
+          // Custom Basecamp fields for tools/scripts to access
+          BasecampCallbackUrl: payload.callback_url, // For progress reporting
+          To: payload.callback_url, // Standard target field
         };
 
         log.info(`[${accountId}] Dispatching to agent with Body="${ctxPayload.Body}"`);

@@ -80,6 +80,63 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
         }
       },
     },
+    threading: {
+      // Provide Basecamp-specific context to tools
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      buildToolContext: ({ context }: { context: any }) => ({
+        basecampCallbackUrl: context.BasecampCallbackUrl,
+        basecampTarget: context.To,
+      }),
+    },
+    actions: {
+      listActions: () => {
+        // Only enable actions if the plugin is configured
+        if (!config.enabled) return [];
+        return ['report_progress', 'send_to_basecamp'];
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      handleAction: async ({ action, params, toolContext }: any) => {
+        if (action === 'report_progress' || action === 'send_to_basecamp') {
+          // Get message parameter
+          const message = params.message || params.text || params.content;
+          if (!message || typeof message !== 'string') {
+            return {
+              ok: false,
+              error: 'Missing required parameter: message (string)',
+            };
+          }
+
+          // Get target from params or tool context
+          const target = params.target || toolContext?.basecampCallbackUrl || toolContext?.basecampTarget;
+          if (!target) {
+            return {
+              ok: false,
+              error: 'No Basecamp callback URL available. This tool can only be used within an active Basecamp conversation.',
+            };
+          }
+
+          try {
+            await sendToBasecamp(target, message);
+            log.info(`[${action}] Progress update sent to Basecamp`);
+            return {
+              ok: true,
+              message: 'Progress update delivered to Basecamp',
+            };
+          } catch (error) {
+            log.error(`[${action}] Failed to send progress update`, { error });
+            return {
+              ok: false,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+          }
+        }
+
+        return {
+          ok: false,
+          error: `Unknown action: ${action}`,
+        };
+      },
+    },
     gateway: {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       startAccount: async (ctx: any) => {

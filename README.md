@@ -7,10 +7,11 @@ Integrate Basecamp 3 chatbots as a native OpenClaw messaging channel.
 
 ## Features
 
-✅ **Webhook-based messaging** - Receives messages from Basecamp via webhooks  
-✅ **Session management** - Automatic session handling per chat/campfire  
-✅ **Rich HTML formatting** - Tables, details/summary, and standard HTML tags  
-✅ **Deferred responses** - Reliable async response delivery  
+✅ **Webhook-based messaging** - Receives messages from Basecamp via webhooks
+✅ **Session management** - Automatic session handling per chat/campfire
+✅ **Rich HTML formatting** - Tables, details/summary, and standard HTML tags
+✅ **Deferred responses** - Reliable async response delivery
+✅ **Progress reporting** - Custom tools for reporting progress during long operations
 ✅ **Minimal configuration** - Just enable and configure webhook path  
 
 > **Note:** This plugin is designed to be installed locally from source.
@@ -242,6 +243,67 @@ Since Basecamp does not provide webhook signature verification (unlike GitHub, S
 - Message deletion (Basecamp API limitation)
 - File uploads (not implemented)
 - Direct messages (chatbots work in campfires only)
+
+## Progress Reporting Tool
+
+The Basecamp plugin provides custom tools that scripts and sub-agents can use to report progress during long-running operations.
+
+### Available Actions
+
+#### `report_progress`
+Send intermediate progress updates back to the Basecamp chat while a task is running.
+
+**Parameters:**
+- `message` (string, required) - The progress message to send to Basecamp
+
+**Example usage in agent tools:**
+
+```typescript
+// From within an OpenClaw agent tool or action
+await handleAction({
+  action: 'report_progress',
+  params: {
+    message: 'Step 1/3: Analyzing data...'
+  },
+  toolContext: context
+});
+```
+
+**Example usage in bash scripts (if environment variables are exposed):**
+
+```bash
+# Hypothetical - depends on OpenClaw environment setup
+openclaw action basecamp report_progress --message "Processing file 1 of 10..."
+```
+
+#### `send_to_basecamp`
+Alias for `report_progress` - same functionality, alternative name.
+
+### How It Works
+
+1. **Context Storage:** When a webhook is received, the `callback_url` is stored in the session context as `BasecampCallbackUrl`
+2. **Tool Context:** The `threading.buildToolContext` provides this URL to tools via `toolContext.basecampCallbackUrl`
+3. **Action Handler:** The action handler uses the callback URL to send messages back to Basecamp
+
+### Use Cases
+
+- **Long data processing:** Report progress through multiple stages
+- **File operations:** Update status while processing multiple files
+- **External API calls:** Show progress for slow API operations
+- **Background tasks:** Keep users informed during async operations
+
+### Session Context Variables
+
+The following custom fields are added to the OpenClaw context for each Basecamp message:
+
+- `BasecampCallbackUrl` - The Basecamp callback URL for sending responses
+- `To` - Standard target field (set to callback URL)
+- `From` - Session identifier (callback URL + creator ID)
+- `UserName` - Basecamp user's display name
+- `UserEmail` - Basecamp user's email address
+- `UserId` - Basecamp user ID
+
+These fields may be accessible to scripts and sub-agents depending on OpenClaw's environment configuration.
 
 ## Development
 
