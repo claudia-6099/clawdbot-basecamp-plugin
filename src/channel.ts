@@ -66,8 +66,52 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
         webhookPath: config.webhookPath,
       }),
     },
+    messaging: {
+      // Tell OpenClaw how to recognize valid Basecamp targets
+      targetResolver: {
+        hint: '<basecamp-callback-url>',
+        // Recognize Basecamp callback URLs as valid target IDs
+        looksLikeId: (raw: string) => {
+          const trimmed = raw.trim();
+          if (!trimmed) return false;
+          try {
+            const url = new URL(trimmed);
+            return url.hostname.endsWith('.basecamp.com') || url.hostname === 'basecamp.com';
+          } catch {
+            return false;
+          }
+        },
+      },
+    },
     outbound: {
       deliveryMode: 'direct' as const,
+      // Resolve/validate targets - accept any valid Basecamp callback URL
+      resolveTarget: ({ to }: { to?: string }) => {
+        const trimmed = to?.trim();
+        if (!trimmed) {
+          return {
+            ok: false,
+            error: new Error('Basecamp target (callback URL) is required'),
+          };
+        }
+        // Validate it's a Basecamp URL
+        try {
+          const url = new URL(trimmed);
+          if (!url.hostname.endsWith('.basecamp.com') && url.hostname !== 'basecamp.com') {
+            return {
+              ok: false,
+              error: new Error(`Invalid Basecamp callback URL domain: ${url.hostname}`),
+            };
+          }
+        } catch {
+          return {
+            ok: false,
+            error: new Error(`Invalid URL format: ${trimmed}`),
+          };
+        }
+        // Valid Basecamp callback URL
+        return { ok: true, to: trimmed };
+      },
       sendText: async ({ text, target }: { text: string; target: string }) => {
         try {
           await sendToBasecamp(target, text);
@@ -83,57 +127,79 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
     threading: {
       // Provide Basecamp-specific context to tools
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      buildToolContext: ({ context }: { context: any }) => ({
-        basecampCallbackUrl: context.BasecampCallbackUrl,
+      buildToolContext: ({ context, hasRepliedRef }: { context: any; hasRepliedRef?: { value: boolean } }) => ({
+        // Standard OpenClaw fields
+        currentChannelId: context.To?.trim() || undefined, // callback_url is the target
+        currentChannelProvider: 'basecamp' as const,
+        hasRepliedRef,
+        // Basecamp-specific fields
+        basecampCallbackUrl: context.To, // To = callback_url
         basecampTarget: context.To,
       }),
     },
     actions: {
       listActions: () => {
         // Only enable actions if the plugin is configured
+        // Use 'send' as it's a standard action that accepts targets
+        // Also expose report_progress for semantic clarity
         if (!config.enabled) return [];
-        return ['report_progress', 'send_to_basecamp'];
+        return ['send', 'report_progress', 'send_to_basecamp'];
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleAction: async ({ action, params, toolContext }: any) => {
-        if (action === 'report_progress' || action === 'send_to_basecamp') {
+        // Debug logging
+        log.info(`[handleAction] action=${action}, params=${JSON.stringify(params)}, toolContext=${JSON.stringify(toolContext)}`);
+
+        if (action === 'send' || action === 'report_progress' || action === 'send_to_basecamp') {
           // Get message parameter
           const message = params.message || params.text || params.content;
           if (!message || typeof message !== 'string') {
+            const result = { ok: false, error: 'Missing required parameter: message (string)' };
             return {
-              ok: false,
-              error: 'Missing required parameter: message (string)',
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+              details: result,
             };
           }
 
           // Get target from params or tool context
-          const target = params.target || toolContext?.basecampCallbackUrl || toolContext?.basecampTarget;
+          // Check multiple fields: explicit param (to/target), Basecamp-specific, or standard OpenClaw field
+          // For 'send' action, OpenClaw converts target -> to
+          const target = params.to ||
+            params.target ||
+            toolContext?.basecampCallbackUrl ||
+            toolContext?.basecampTarget ||
+            toolContext?.currentChannelId;
           if (!target) {
+            const result = { ok: false, error: 'No Basecamp callback URL available. This tool can only be used within an active Basecamp conversation. Ensure Provider is set to "basecamp" in the session context.' };
             return {
-              ok: false,
-              error: 'No Basecamp callback URL available. This tool can only be used within an active Basecamp conversation.',
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+              details: result,
             };
           }
 
           try {
             await sendToBasecamp(target, message);
             log.info(`[${action}] Progress update sent to Basecamp`);
+            // Return in AgentToolResult format with content array
+            const result = { ok: true, message: 'Progress update delivered to Basecamp' };
             return {
-              ok: true,
-              message: 'Progress update delivered to Basecamp',
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+              details: result,
             };
           } catch (error) {
             log.error(`[${action}] Failed to send progress update`, { error });
+            const result = { ok: false, error: error instanceof Error ? error.message : 'Unknown error' };
             return {
-              ok: false,
-              error: error instanceof Error ? error.message : 'Unknown error',
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+              details: result,
             };
           }
         }
 
+        const result = { ok: false, error: `Unknown action: ${action}` };
         return {
-          ok: false,
-          error: `Unknown action: ${action}`,
+          content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          details: result,
         };
       },
     },

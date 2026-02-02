@@ -182,6 +182,8 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           RawBody: payload.command,
           CommandBody: payload.command,
           Channel: 'basecamp',
+          Provider: 'basecamp', // Required for OpenClaw to find channel dock and buildToolContext
+          Surface: 'basecamp', // Alternative lookup field
           AccountId: accountId,
           // Custom Basecamp fields for tools/scripts to access
           BasecampCallbackUrl: payload.callback_url, // For progress reporting
