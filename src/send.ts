@@ -12,16 +12,18 @@ export async function sendToBasecamp(
   console.log('[Basecamp] Sending message to:', callbackUrl);
   console.log('[Basecamp] Content length:', content.length);
 
-  const payload: BasecampLinePayload = {
-    content: formatAsHtml(content)
-  };
+  const htmlContent = formatAsHtml(content);
+  console.log('[Basecamp] HTML content:', htmlContent);
+
+  // Try sending as form data (application/x-www-form-urlencoded)
+  const formBody = `content=${encodeURIComponent(htmlContent)}`;
 
   const response = await fetch(callbackUrl, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: JSON.stringify(payload),
+    body: formBody,
   });
 
   console.log('[Basecamp] Response status:', response.status);
@@ -36,14 +38,29 @@ export async function sendToBasecamp(
 }
 
 /**
+ * Check if text already contains HTML tags
+ */
+function containsHtml(text: string): boolean {
+  // Check for common Basecamp-supported HTML tags
+  const htmlPattern = /<(p|a|strong|em|pre|br|table|tr|td|th|thead|tbody|details|summary|ul|ol|li)\b[^>]*>/i;
+  return htmlPattern.test(text);
+}
+
+/**
  * Convert plain text/markdown to Basecamp-compatible HTML
  * Basecamp supports: p, strong, em, a, ul, ol, li, br, table, tr, td, th, thead, tbody, details, summary
+ * 
+ * If content already contains HTML tags, it's passed through as-is (no escaping).
+ * Otherwise, plain text/markdown is converted to HTML.
  */
 export function formatAsHtml(text: string): string {
-  // Basic text to HTML conversion
-  // TODO: Add more sophisticated markdown parsing if needed
-  
-  // Escape HTML entities
+  // If already contains HTML, pass through as-is
+  if (containsHtml(text)) {
+    return text;
+  }
+
+  // Plain text/markdown conversion
+  // Escape HTML entities first
   let html = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
