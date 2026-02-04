@@ -1,4 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
 import type { BasecampConfig } from './types.js';
 import { sendToBasecamp } from './send.js';
 
@@ -74,6 +76,38 @@ function isValidBasecampCallback(callbackUrl: string): boolean {
 }
 
 /**
+ * Dynamically load OpenClaw plugin SDK with robust path resolution.
+ * Supports env override, package exports, and common global npm locations.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function loadOpenClawPluginSdk(): any {
+  // Allow explicit override via environment variable
+  const envPath = process.env.OPENCLAW_PLUGIN_SDK;
+  if (envPath) {
+    try { return require(envPath); } catch { /* ignore */ }
+  }
+
+  // Try package export paths first (preferred in OpenClaw >= 2026.2.2)
+  try { return require('openclaw/plugin-sdk'); } catch { /* ignore */ }
+  try { return require('openclaw/dist/plugin-sdk/index.js'); } catch { /* ignore */ }
+
+  // Fallback to common global npm locations
+  const roots = [
+    process.env.npm_config_prefix ? path.join(process.env.npm_config_prefix, 'lib', 'node_modules') : '',
+    path.join(os.homedir(), '.npm-global', 'lib', 'node_modules'),
+    '/usr/local/lib/node_modules',
+    '/usr/lib/node_modules',
+  ].filter(Boolean);
+
+  for (const root of roots) {
+    const candidate = path.join(root, 'openclaw', 'dist', 'plugin-sdk', 'index.js');
+    try { return require(candidate); } catch { /* try next */ }
+  }
+
+  throw new Error('OpenClaw plugin SDK not found. Set OPENCLAW_PLUGIN_SDK env or install openclaw globally.');
+}
+
+/**
  * Monitor Basecamp webhooks
  * Registers HTTP handler and processes incoming webhook requests
  */
@@ -82,16 +116,9 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
   log.info(`[${accountId}] Starting Basecamp webhook monitor`);
 
-  // Import OpenClaw functions dynamically (required for plugin runtime loading)
-  // OpenClaw internal modules don't have published TypeScript types
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { registerPluginHttpRoute } = require('/home/ec2-user/.npm-global/lib/node_modules/openclaw/dist/plugins/http-registry.js');
-
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { normalizePluginHttpPath } = require('/home/ec2-user/.npm-global/lib/node_modules/openclaw/dist/plugins/http-path.js');
-
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { dispatchReplyWithBufferedBlockDispatcher } = require('/home/ec2-user/.npm-global/lib/node_modules/openclaw/dist/auto-reply/reply/provider-dispatcher.js');
+  // Load OpenClaw SDK functions dynamically (avoids hardcoded paths)
+  const sdk = loadOpenClawPluginSdk();
+  const { registerPluginHttpRoute, normalizePluginHttpPath, dispatchReplyWithBufferedBlockDispatcher } = sdk;
 
   const normalizedPath = normalizePluginHttpPath(config.webhookPath, '/basecamp/webhook') ?? '/basecamp/webhook';
 
