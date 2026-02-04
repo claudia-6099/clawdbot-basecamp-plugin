@@ -1,6 +1,8 @@
 import { sendToBasecamp } from './send.js';
 import { monitorBasecampProvider } from './monitor.js';
 import type { BasecampConfig } from './types.js';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PluginRuntime = any; // Type not exported from SDK, use any
 
 interface Logger {
   info: (...args: unknown[]) => void;
@@ -13,7 +15,7 @@ interface Logger {
  * Factory that creates the Basecamp Channel Plugin implementation.
  * Implements the OpenClaw Channel interface for Basecamp integration.
  */
-export function createBasecampChannel(config: BasecampConfig, log: Logger) {
+export function createBasecampChannel(config: BasecampConfig, log: Logger, runtime: PluginRuntime) {
   return {
     id: 'basecamp',
     meta: {
@@ -211,6 +213,7 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger) {
 
         // Start monitoring webhooks
         const cleanup = await monitorBasecampProvider({
+          runtime,
           config,
           log,
           accountId,

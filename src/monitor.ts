@@ -18,6 +18,7 @@ interface MonitorParams {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cfg: any; // OpenClaw config object - type not exported by SDK
   abortSignal?: AbortSignal;
+  runtime: any; // PluginRuntime - use any to avoid import issues
 }
 
 // Rate limiting store
@@ -112,13 +113,15 @@ function loadOpenClawPluginSdk(): any {
  * Registers HTTP handler and processes incoming webhook requests
  */
 export async function monitorBasecampProvider(params: MonitorParams): Promise<() => void> {
-  const { config, log, accountId, cfg, abortSignal } = params;
+  const { config, log, accountId, cfg, abortSignal, runtime } = params;
 
   log.info(`[${accountId}] Starting Basecamp webhook monitor`);
 
   // Load OpenClaw SDK functions dynamically (avoids hardcoded paths)
   const sdk = loadOpenClawPluginSdk();
-  const { registerPluginHttpRoute, normalizePluginHttpPath, dispatchReplyWithBufferedBlockDispatcher } = sdk;
+  const { registerPluginHttpRoute, normalizePluginHttpPath } = sdk;
+  // Use runtime for dispatch function (not exported from SDK directly)
+  const dispatchReplyWithBufferedBlockDispatcher = runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher;
 
   const normalizedPath = normalizePluginHttpPath(config.webhookPath, '/basecamp/webhook') ?? '/basecamp/webhook';
 

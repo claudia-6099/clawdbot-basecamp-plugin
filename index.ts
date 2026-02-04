@@ -44,7 +44,7 @@ export default {
     log.info('Plugin configuration:', config);
 
     // Register channel implementation with gateway webhook handling
-    api.registerChannel({ plugin: createBasecampChannel(config, log) });
+    api.registerChannel({ plugin: createBasecampChannel(config, log, api.runtime) });
 
     // Setup periodic session cleanup via registered service
     let cleanupInterval: ReturnType<typeof setInterval> | undefined;
