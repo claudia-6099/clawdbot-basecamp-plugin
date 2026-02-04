@@ -203,12 +203,16 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         // Build context payload for OpenClaw
         // OpenClaw expects Body/RawBody/CommandBody (not Text)
         // Create unique session per person by combining callback_url + creator.id
+        // Inject user info at the start of the message so the agent knows who's writing
+        const userPrefix = `[${payload.creator.name} | ${payload.creator.email_address}]: `;
+        const bodyWithUser = userPrefix + payload.command;
+        
         const ctxPayload = {
           From: sessionId, // Unique session per person
           UserName: payload.creator.name,
           UserEmail: payload.creator.email_address,
           UserId: payload.creator.id.toString(),
-          Body: payload.command,
+          Body: bodyWithUser,
           RawBody: payload.command,
           CommandBody: payload.command,
           Channel: 'basecamp',
