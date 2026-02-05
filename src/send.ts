@@ -41,7 +41,7 @@ export async function sendToBasecamp(
  */
 function containsHtml(text: string): boolean {
   // Check for common Basecamp-supported HTML tags
-  const htmlPattern = /<(p|a|strong|em|pre|br|table|tr|td|th|thead|tbody|details|summary|ul|ol|li)\b[^>]*>/i;
+  const htmlPattern = /<(p|a|b|i|strong|em|pre|br|table|tr|td|th|thead|tbody|details|summary|ul|ol|li)\b[^>]*>/i;
   return htmlPattern.test(text);
 }
 
