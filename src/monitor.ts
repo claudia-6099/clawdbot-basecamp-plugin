@@ -236,11 +236,13 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           progressStream = createBasecampProgressStream({
             callbackUrl: payload.callback_url,
             throttleMs: config.progressThrottleMs,
-            maxMessages: config.maxProgressMessages,
             log: (msg) => log.info(`[${accountId}] [progress] ${msg}`),
             warn: (msg) => log.warn(`[${accountId}] [progress] ${msg}`),
           });
         }
+
+        // Buffer block deliveries so we send one consolidated final message
+        const deliveryBuffer: string[] = [];
 
         // Dispatch to agent system and stream responses back
         await dispatchReplyWithBufferedBlockDispatcher({
@@ -249,18 +251,22 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           dispatcherOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             deliver: async (deliveryPayload: any, info: any) => {
-              // Stop progress messages before delivering the final response
+              if (deliveryPayload.text) {
+                deliveryBuffer.push(deliveryPayload.text);
+              }
+              // Only send the consolidated response on final delivery
               if (info?.kind === 'final') {
                 progressStream?.stop();
-              }
-              if (deliveryPayload.text) {
-                log.info(`[${accountId}] Delivering response to ${payload.callback_url}`);
-                try {
-                  await sendToBasecamp(payload.callback_url, deliveryPayload.text);
-                  log.info(`[${accountId}] Response delivered successfully`);
-                } catch (err) {
-                  log.error(`[${accountId}] Failed to deliver response`, { error: err });
-                  throw err;
+                const fullResponse = deliveryBuffer.join('\n\n');
+                if (fullResponse) {
+                  log.info(`[${accountId}] Delivering final response to ${payload.callback_url} (${deliveryBuffer.length} blocks)`);
+                  try {
+                    await sendToBasecamp(payload.callback_url, fullResponse);
+                    log.info(`[${accountId}] Response delivered successfully`);
+                  } catch (err) {
+                    log.error(`[${accountId}] Failed to deliver response`, { error: err });
+                    throw err;
+                  }
                 }
               }
             },

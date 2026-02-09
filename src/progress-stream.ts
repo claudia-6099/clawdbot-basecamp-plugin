@@ -1,10 +1,9 @@
 import { sendToBasecamp } from './send.js';
 
 const DEFAULT_THROTTLE_MS = 5000;
-const DEFAULT_MAX_MESSAGES = 3;
 const MIN_THROTTLE_MS = 1000;
 /** Truncate progress previews to this many characters */
-const MAX_PREVIEW_CHARS = 500;
+const MAX_PREVIEW_CHARS = 2000;
 
 export type BasecampProgressStream = {
   /** Queue the latest partial text; sends are throttled automatically */
@@ -16,15 +15,14 @@ export type BasecampProgressStream = {
 export function createBasecampProgressStream(params: {
   callbackUrl: string;
   throttleMs?: number;
-  maxMessages?: number;
   log?: (message: string) => void;
   warn?: (message: string) => void;
 }): BasecampProgressStream {
   const throttleMs = Math.max(MIN_THROTTLE_MS, params.throttleMs ?? DEFAULT_THROTTLE_MS);
-  const maxMessages = Math.max(1, params.maxMessages ?? DEFAULT_MAX_MESSAGES);
   const callbackUrl = params.callbackUrl;
 
   let pendingText = '';
+  let lastSentText = '';
   let lastSentAt = 0;
   let messagesSent = 0;
   let inFlight = false;
@@ -32,36 +30,31 @@ export function createBasecampProgressStream(params: {
   let stopped = false;
 
   const sendProgress = async (text: string) => {
-    if (stopped || messagesSent >= maxMessages) {
+    if (stopped) {
       return;
     }
     const trimmed = text.trimEnd();
     if (!trimmed) {
       return;
     }
-    // Truncate long previews and add ellipsis
+    // Skip if content hasn't meaningfully changed since last send
+    if (trimmed === lastSentText) {
+      return;
+    }
+    // Truncate long previews
     const preview = trimmed.length > MAX_PREVIEW_CHARS
       ? trimmed.slice(0, MAX_PREVIEW_CHARS) + '...'
-      : trimmed;
-    // Wrap in italic with a working indicator to distinguish from final response
-    const formatted = `<em>\u270F\uFE0F Working...\n\n${preview}</em>`;
+      : trimmed + '...';
+    lastSentText = trimmed;
     messagesSent++;
     try {
-      await sendToBasecamp(callbackUrl, formatted);
-      params.log?.(`progress message ${messagesSent}/${maxMessages} sent`);
+      await sendToBasecamp(callbackUrl, preview);
+      params.log?.(`progress message ${messagesSent} sent (${trimmed.length} chars)`);
     } catch (err) {
       stopped = true;
       params.warn?.(
         `progress stream failed: ${err instanceof Error ? err.message : String(err)}`,
       );
-    }
-    if (messagesSent >= maxMessages) {
-      params.log?.(`progress stream reached max messages (${maxMessages}), stopping`);
-      stopped = true;
-      if (timer) {
-        clearTimeout(timer);
-        timer = undefined;
-      }
     }
   };
 
@@ -134,7 +127,7 @@ export function createBasecampProgressStream(params: {
   };
 
   params.log?.(
-    `basecamp progress stream ready (throttleMs=${throttleMs}, maxMessages=${maxMessages})`,
+    `basecamp progress stream ready (throttleMs=${throttleMs})`,
   );
 
   return { update, stop };

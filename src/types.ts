@@ -57,8 +57,6 @@ export interface BasecampConfig {
   streamProgress?: boolean;
   /** Minimum interval in ms between progress messages (default: 5000) */
   progressThrottleMs?: number;
-  /** Maximum number of progress messages per response (default: 3) */
-  maxProgressMessages?: number;
 }
 
 /**

@@ -22,7 +22,6 @@ describe('validateConfig', () => {
       port: 8080,
       streamProgress: false,
       progressThrottleMs: 10000,
-      maxProgressMessages: 5,
     };
     const result = validateConfig(customConfig);
     expect(result).toEqual(customConfig);
@@ -52,6 +51,5 @@ describe('defaultConfig', () => {
     expect(defaultConfig.port).toBe(3000);
     expect(defaultConfig.streamProgress).toBe(true);
     expect(defaultConfig.progressThrottleMs).toBe(5000);
-    expect(defaultConfig.maxProgressMessages).toBe(3);
   });
 });
