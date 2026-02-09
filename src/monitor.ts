@@ -228,12 +228,16 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
         log.info(`[${accountId}] Dispatching to agent with Body="${ctxPayload.Body}"`);
 
-        // Send immediate "thinking" feedback for non-command messages
+        // Schedule a "thinking" indicator after 3s — cancelled if a block arrives first
         const isCommand = payload.command.trimStart().startsWith('/');
+        let thinkingTimer: ReturnType<typeof setTimeout> | undefined;
         if (!isCommand) {
-          sendToBasecamp(payload.callback_url, '<em>Thinking...</em>').catch((err) => {
-            log.warn(`[${accountId}] Failed to send thinking indicator`, { error: err });
-          });
+          thinkingTimer = setTimeout(() => {
+            thinkingTimer = undefined;
+            sendToBasecamp(payload.callback_url, '<em>\uD83E\uDDE0 Pensando...</em>').catch((err) => {
+              log.warn(`[${accountId}] Failed to send thinking indicator`, { error: err });
+            });
+          }, 3000);
         }
 
         // Dispatch to agent system — deliver each complete block as it arrives
@@ -243,6 +247,11 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           dispatcherOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             deliver: async (deliveryPayload: any) => {
+              // First block arrived — cancel thinking indicator if it hasn't fired
+              if (thinkingTimer) {
+                clearTimeout(thinkingTimer);
+                thinkingTimer = undefined;
+              }
               if (deliveryPayload.text) {
                 log.info(`[${accountId}] Delivering block to ${payload.callback_url}`);
                 try {
@@ -256,6 +265,10 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any, info: any) => {
+              if (thinkingTimer) {
+                clearTimeout(thinkingTimer);
+                thinkingTimer = undefined;
+              }
               log.error(`[${accountId}] ${info.kind} reply failed`, { error: err });
             },
           },
