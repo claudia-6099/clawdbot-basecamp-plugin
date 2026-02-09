@@ -8,11 +8,15 @@ Integrate Basecamp 3 chatbots as a native OpenClaw messaging channel.
 ## Features
 
 ✅ **Webhook-based messaging** - Receives messages from Basecamp via webhooks
-✅ **Session management** - Automatic session handling per chat/campfire
+✅ **Session management** - Automatic per-user session handling (isolated per person per chat)
 ✅ **Rich HTML formatting** - Tables, details/summary, and standard HTML tags
-✅ **Deferred responses** - Reliable async response delivery
+✅ **Slash commands** - Full support for OpenClaw commands (`/new`, `/help`, etc.)
+✅ **Chat type detection** - Automatically detects group campfires vs direct pings via Basecamp API
+✅ **Thinking indicator** - Shows "Pensando..." feedback while the agent processes long requests
+✅ **Block streaming** - Delivers each response block as it completes (no waiting for full response)
 ✅ **Progress reporting** - Custom tools for reporting progress during long operations
-✅ **Minimal configuration** - Just enable and configure webhook path  
+✅ **OAuth integration** - Optional OAuth setup for chat type detection and API features
+✅ **Minimal configuration** - Works out of the box; OAuth and advanced features are optional
 
 > **Note:** This plugin is designed to be installed locally from source.
 > This provides more flexibility for customization and direct integration with your OpenClaw instance.
@@ -134,6 +138,10 @@ The bot should respond via OpenClaw!
 | `botName` | string | `"claudia"` | Bot trigger name in Basecamp |
 | `webhookPath` | string | `"/basecamp/webhook"` | Webhook endpoint path |
 | `port` | number | `3000` | Server port (usually gateway port) |
+| `oauth.clientId` | string | — | Basecamp OAuth app client ID (optional) |
+| `oauth.clientSecret` | string | — | Basecamp OAuth app client secret (optional) |
+| `oauth.redirectUri` | string | — | OAuth redirect URI (optional) |
+| `chatTypeCache.ttlDays` | number | `7` | How long to cache chat type detection results |
 
 ### Example Configurations
 
@@ -144,6 +152,30 @@ The bot should respond via OpenClaw!
     "entries": {
       "basecamp": {
         "enabled": true
+      }
+    }
+  }
+}
+```
+
+**With OAuth for chat type detection:**
+```json
+{
+  "plugins": {
+    "entries": {
+      "basecamp": {
+        "enabled": true,
+        "config": {
+          "botName": "claudia",
+          "oauth": {
+            "clientId": "your-client-id",
+            "clientSecret": "your-client-secret",
+            "redirectUri": "http://localhost:3000/basecamp/oauth/callback"
+          },
+          "chatTypeCache": {
+            "ttlDays": 14
+          }
+        }
       }
     }
   }
@@ -174,24 +206,49 @@ The bot should respond via OpenClaw!
 1. **Basecamp → OpenClaw**
    - User mentions `@claudia` in Basecamp chat
    - Basecamp sends webhook to `https://your-server.com/basecamp/webhook`
-   - Plugin receives webhook and extracts message
+   - Plugin receives webhook, validates callback URL domain, and applies rate limiting
 
 2. **OpenClaw Processing**
-   - Creates/resumes session for chat (keyed by `callback_url`)
-   - Routes message to AI agent
-   - Agent generates response
+   - Creates/resumes session for user (keyed by `callback_url + creator_id`)
+   - Detects chat type (group campfire vs direct ping) via Basecamp API if OAuth is configured
+   - Routes message to AI agent with full user context
+   - If 3 seconds pass without a response, sends a "Pensando..." thinking indicator
 
 3. **OpenClaw → Basecamp**
-   - Plugin sends response to `callback_url` from webhook
-   - Message appears in Basecamp chat
-   - HTML formatting preserved (tables, bold, links, etc.)
+   - Each response block is delivered to Basecamp as it completes (streaming)
+   - Message appears in Basecamp chat with HTML formatting preserved
+   - Slash commands (`/new`, `/help`, etc.) are fully supported
 
 ### Session Management
 
 - **Key:** `callback_url:user:creator_id` (unique per person per chat)
+- **Isolation:** Each user maintains fully independent conversation context, even in group campfires
 - **Lifecycle:** Auto-created on first message, cleaned up after 24h inactivity
 - **Cleanup:** Automatic every 6 hours
-- **State:** Each user maintains independent conversation context
+- **Concurrent users:** Multiple users can interact with the bot simultaneously without interference
+
+### Slash Commands
+
+All OpenClaw slash commands work in Basecamp (e.g., `/new`, `/help`, `/status`). Commands are authorized automatically — Basecamp webhooks are inherently authenticated since the `creator` field is verified by Basecamp.
+
+### Thinking Indicator
+
+When a user sends a non-command message, the plugin waits 3 seconds. If the agent hasn't produced any response blocks yet, it sends an italic "Pensando..." message to Basecamp so the user knows the bot is working. The indicator is automatically cancelled if a response arrives within 3 seconds.
+
+### Block Streaming
+
+Instead of waiting for the entire agent response to complete, the plugin delivers each response block to Basecamp as soon as it's ready. This means users see responses appearing progressively rather than waiting for a potentially long generation to finish.
+
+### Chat Type Detection
+
+When OAuth is configured, the plugin automatically detects whether each conversation is a **group campfire** or a **direct ping**:
+
+- **Group** (`ChatType: "group"`): Messages from project campfires. The chat name is included as `ChatName`.
+- **Direct** (`ChatType: "direct"`): Messages from Basecamp pings (1-on-1 conversations).
+
+Detection results are cached to disk (`~/.openclaw/cache/basecamp-chat-types.json`) with a configurable TTL (default 7 days).
+
+**Without OAuth:** All chats default to `"direct"` type. This is the standard behavior and works fine for most use cases.
 
 ## Security
 
@@ -231,9 +288,13 @@ Since Basecamp does not provide webhook signature verification (unlike GitHub, S
 
 ### ✅ Supported
 
-- Text messages
+- Text messages (campfires and direct pings)
 - HTML formatting (tables, bold, italic, links)
 - `<details>` and `<summary>` tags (collapsible sections)
+- Slash commands (`/new`, `/help`, `/status`, etc.)
+- Block streaming (progressive response delivery)
+- Thinking indicator (automatic "Pensando..." for slow responses)
+- Chat type detection (group vs direct, with OAuth)
 - Deferred responses (async processing)
 
 ### ❌ Not Supported
@@ -242,7 +303,80 @@ Since Basecamp does not provide webhook signature verification (unlike GitHub, S
 - Message editing (Basecamp API limitation)
 - Message deletion (Basecamp API limitation)
 - File uploads (not implemented)
-- Direct messages (chatbots work in campfires only)
+
+## OAuth Setup (Optional)
+
+OAuth is **optional**. Without it, the plugin works normally — all chats are treated as direct conversations. OAuth enables chat type detection (group vs direct) via the Basecamp API.
+
+### 1. Register a Basecamp OAuth App
+
+1. Go to [https://launchpad.37signals.com/integrations](https://launchpad.37signals.com/integrations)
+2. Click **Register an application**
+3. Fill in:
+   - **Name:** Your bot name (e.g., "Claudia Bot")
+   - **Redirect URI:** Your redirect URI (e.g., `http://localhost:3000/basecamp/oauth/callback`)
+4. Note the **Client ID** and **Client Secret**
+
+### 2. Add OAuth to Config
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "basecamp": {
+        "enabled": true,
+        "config": {
+          "oauth": {
+            "clientId": "your-client-id",
+            "clientSecret": "your-client-secret",
+            "redirectUri": "http://localhost:3000/basecamp/oauth/callback"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### 3. Authorize via Bot Commands
+
+In any Basecamp chat where the bot is installed:
+
+1. **Get the authorization URL:**
+   ```
+   @claudia /basecamp-auth
+   ```
+   The bot will reply with a URL. Open it in your browser and authorize the app.
+
+2. **Submit the authorization code:**
+   ```
+   @claudia /basecamp-token AUTH_CODE_HERE
+   ```
+   The bot will exchange the code for access and refresh tokens, stored securely at `~/.openclaw/credentials/basecamp-oauth.json`.
+
+3. **Verify status:**
+   ```
+   @claudia /basecamp-status
+   ```
+   Shows whether OAuth is configured, token validity, and cache statistics.
+
+### Token Management
+
+- Tokens are stored at `~/.openclaw/credentials/basecamp-oauth.json` with `chmod 600` permissions
+- Refresh tokens are used automatically when access tokens expire
+- If a refresh fails, credentials are cleared and you'll need to re-authorize
+
+## Bot Commands
+
+These commands are available via the Basecamp chat (prefix with `@botname`):
+
+| Command | Description |
+|---------|-------------|
+| `/basecamp-auth` | Generate OAuth authorization URL |
+| `/basecamp-token <code>` | Exchange authorization code for OAuth tokens |
+| `/basecamp-status` | Show OAuth status and cache statistics |
+
+In addition, all standard OpenClaw slash commands work (`/new`, `/help`, `/status`, etc.).
 
 ## Progress Reporting Tool
 
@@ -294,16 +428,28 @@ Alias for `report_progress` - same functionality, alternative name.
 
 ### Session Context Variables
 
-The following custom fields are added to the OpenClaw context for each Basecamp message:
+The following fields are added to the OpenClaw context for each Basecamp message:
 
-- `BasecampCallbackUrl` - The Basecamp callback URL for sending responses
-- `To` - Standard target field (set to callback URL)
-- `From` - Session identifier (callback URL + creator ID)
-- `UserName` - Basecamp user's display name
-- `UserEmail` - Basecamp user's email address
-- `UserId` - Basecamp user ID
+| Field | Description |
+|-------|-------------|
+| `From` | Session identifier (`callback_url:user:creator_id`) |
+| `UserName` | Basecamp user's display name |
+| `UserEmail` | Basecamp user's email address |
+| `UserId` | Basecamp user ID (string) |
+| `Body` | Message with user prefix (`[Name \| Email]: message`) |
+| `RawBody` | Original message text |
+| `CommandBody` | Original message text (for command parsing) |
+| `Channel` | Always `"basecamp"` |
+| `Provider` | Always `"basecamp"` |
+| `Surface` | Always `"basecamp"` |
+| `AccountId` | OpenClaw account ID |
+| `CommandAuthorized` | Always `true` (enables slash commands) |
+| `ChatType` | `"direct"` or `"group"` (detected via API or defaults to `"direct"`) |
+| `ChatName` | Chat/campfire name (only for group chats with OAuth) |
+| `BasecampCallbackUrl` | The Basecamp callback URL for sending responses |
+| `To` | Standard target field (set to callback URL) |
 
-These fields may be accessible to scripts and sub-agents depending on OpenClaw's environment configuration.
+These fields are accessible to scripts, tools, and sub-agents via OpenClaw's context system.
 
 ## Development
 
@@ -315,11 +461,14 @@ openclaw-basecamp-plugin/
 ├── openclaw.plugin.json     # Plugin manifest
 ├── package.json             # Dependencies + OpenClaw metadata
 ├── src/
-│   ├── channel.ts          # Channel factory with gateway webhook handling
-│   ├── webhook.ts          # Webhook payload parsing & session management
-│   ├── send.ts             # Message formatting & sending
+│   ├── channel.ts          # Channel factory with actions & gateway webhook handling
+│   ├── monitor.ts          # Webhook handler, dispatch, thinking indicator, block streaming
+│   ├── send.ts             # Message formatting & sending to Basecamp
+│   ├── chat-detection.ts   # Chat type detection (group vs direct) via Basecamp API
+│   ├── oauth.ts            # OAuth token lifecycle (store, refresh, validate, exchange)
 │   ├── config-schema.ts    # Config validation & defaults
-│   └── types.ts            # TypeScript interfaces
+│   ├── types.ts            # TypeScript interfaces
+│   └── __tests__/          # Test files
 └── README.md
 ```
 
