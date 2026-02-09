@@ -229,6 +229,14 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
         log.info(`[${accountId}] Dispatching to agent with Body="${ctxPayload.Body}"`);
 
+        // Send immediate "thinking" feedback for non-command messages
+        const isCommand = payload.command.trimStart().startsWith('/');
+        if (!isCommand) {
+          sendToBasecamp(payload.callback_url, '<em>Thinking...</em>').catch((err) => {
+            log.warn(`[${accountId}] Failed to send thinking indicator`, { error: err });
+          });
+        }
+
         // Set up progress stream for live updates (if enabled)
         const streamEnabled = config.streamProgress !== false;
         let progressStream: BasecampProgressStream | undefined;
