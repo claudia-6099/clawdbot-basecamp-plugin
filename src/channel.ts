@@ -1,6 +1,14 @@
 import { sendToBasecamp } from './send.js';
 import { monitorBasecampProvider } from './monitor.js';
 import type { BasecampConfig } from './types.js';
+import {
+  buildAuthUrl,
+  storeCredentials,
+  validateToken,
+  getOAuthStatus,
+  exchangeCodeForToken,
+} from './oauth.js';
+import { getCacheSize } from './chat-detection.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PluginRuntime = any; // Type not exported from SDK, use any
 
@@ -28,7 +36,7 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
       aliases: ['bc', 'basecamp3'],
     },
     capabilities: {
-      chatTypes: ['direct'] as const,
+      chatTypes: ['direct', 'group'] as const,
       media: {
         images: false,
         videos: false,
@@ -145,7 +153,7 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
         // Use 'send' as it's a standard action that accepts targets
         // Also expose report_progress for semantic clarity
         if (!config.enabled) return [];
-        return ['send', 'report_progress', 'send_to_basecamp'];
+        return ['send', 'report_progress', 'send_to_basecamp', 'basecamp-auth', 'basecamp-token', 'basecamp-status'];
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleAction: async ({ action, params, toolContext }: any) => {
@@ -196,6 +204,67 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
               details: result,
             };
           }
+        }
+
+        if (action === 'basecamp-auth') {
+          const authUrl = buildAuthUrl(config);
+          if (!authUrl) {
+            const result = { ok: false, error: 'OAuth not configured. Set oauth.clientId, oauth.clientSecret, and oauth.redirectUri in the Basecamp plugin config.' };
+            return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+          }
+          const result = {
+            ok: true,
+            message: `To authenticate with Basecamp:\n\n1. Visit: ${authUrl}\n2. Authorize the app\n3. Copy the authorization code from the redirect\n4. Run: /basecamp-token YOUR_CODE`,
+          };
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+        }
+
+        if (action === 'basecamp-token') {
+          const code = params.token || params.code || params.message;
+          if (!code || typeof code !== 'string') {
+            const result = { ok: false, error: 'Usage: /basecamp-token YOUR_AUTHORIZATION_CODE' };
+            return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+          }
+          const trimmed = code.trim();
+
+          // Check if it looks like a raw access token (long string, no spaces) vs auth code
+          if (trimmed.length > 60 && !trimmed.includes(' ')) {
+            // Treat as a direct access token
+            const validation = await validateToken(trimmed);
+            if (!validation.valid) {
+              const result = { ok: false, error: `Token validation failed: ${validation.error}` };
+              return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+            }
+            storeCredentials({ accessToken: trimmed });
+            const result = { ok: true, message: 'Access token validated and stored successfully.' };
+            return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+          }
+
+          // Treat as authorization code — exchange for tokens
+          const creds = await exchangeCodeForToken(config, trimmed, log);
+          if (!creds) {
+            const result = { ok: false, error: 'Failed to exchange authorization code for token. Check your OAuth config and try again.' };
+            return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+          }
+          const result = { ok: true, message: 'OAuth token obtained and stored successfully.' };
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
+        }
+
+        if (action === 'basecamp-status') {
+          const status = getOAuthStatus();
+          const cacheSize = getCacheSize();
+          const result = {
+            ok: true,
+            oauth: {
+              configured: status.configured,
+              expiresAt: status.expiresAt ?? 'N/A',
+              hasRefreshToken: status.hasRefreshToken,
+            },
+            chatTypeCache: {
+              entries: cacheSize,
+            },
+          };
+          return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }], details: result };
         }
 
         const result = { ok: false, error: `Unknown action: ${action}` };

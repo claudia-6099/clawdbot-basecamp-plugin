@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { BasecampConfig } from './types.js';
 import { sendToBasecamp } from './send.js';
+import { getChatType } from './chat-detection.js';
 
 interface Logger {
   info: (...args: unknown[]) => void;
@@ -200,14 +201,18 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         res.statusCode = 204;
         res.end();
 
+        // Detect chat type (group campfire vs direct ping) via Basecamp API
+        const chatTypeResult = await getChatType(payload.callback_url, config, log);
+        log.info(`[${accountId}] Chat type: ${chatTypeResult.chatType}${chatTypeResult.chatName ? ` (${chatTypeResult.chatName})` : ''}`);
+
         // Build context payload for OpenClaw
         // OpenClaw expects Body/RawBody/CommandBody (not Text)
         // Create unique session per person by combining callback_url + creator.id
         // Inject user info at the start of the message so the agent knows who's writing
         const userPrefix = `[${payload.creator.name} | ${payload.creator.email_address}]: `;
         const bodyWithUser = userPrefix + payload.command;
-        
-        const ctxPayload = {
+
+        const ctxPayload: Record<string, unknown> = {
           From: sessionId, // Unique session per person
           UserName: payload.creator.name,
           UserEmail: payload.creator.email_address,
@@ -221,10 +226,15 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           AccountId: accountId,
           // Basecamp webhooks are inherently authenticated (creator is verified by Basecamp)
           CommandAuthorized: true,
+          // Chat type detection (direct ping vs group campfire)
+          ChatType: chatTypeResult.chatType !== 'unknown' ? chatTypeResult.chatType : undefined,
           // Custom Basecamp fields for tools/scripts to access
           BasecampCallbackUrl: payload.callback_url, // For progress reporting
           To: payload.callback_url, // Standard target field
         };
+        if (chatTypeResult.chatName) {
+          ctxPayload.ChatName = chatTypeResult.chatName;
+        }
 
         log.info(`[${accountId}] Dispatching to agent with Body="${ctxPayload.Body}"`);
 

@@ -20,6 +20,8 @@ describe('validateConfig', () => {
       botName: 'testbot',
       webhookPath: '/custom/webhook',
       port: 8080,
+      oauth: { clientId: 'test-id', clientSecret: 'test-secret', redirectUri: 'http://localhost' },
+      chatTypeCache: { ttlDays: 14 },
     };
     const result = validateConfig(customConfig);
     expect(result).toEqual(customConfig);
