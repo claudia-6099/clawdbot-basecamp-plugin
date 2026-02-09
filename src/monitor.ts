@@ -3,7 +3,6 @@ import os from 'node:os';
 import path from 'node:path';
 import type { BasecampConfig } from './types.js';
 import { sendToBasecamp } from './send.js';
-import { createBasecampProgressStream, type BasecampProgressStream } from './progress-stream.js';
 
 interface Logger {
   info: (...args: unknown[]) => void;
@@ -237,63 +236,30 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           });
         }
 
-        // Set up progress stream for live updates (if enabled)
-        const streamEnabled = config.streamProgress !== false;
-        let progressStream: BasecampProgressStream | undefined;
-        if (streamEnabled) {
-          progressStream = createBasecampProgressStream({
-            callbackUrl: payload.callback_url,
-            throttleMs: config.progressThrottleMs,
-            log: (msg) => log.info(`[${accountId}] [progress] ${msg}`),
-            warn: (msg) => log.warn(`[${accountId}] [progress] ${msg}`),
-          });
-        }
-
-        // Buffer block deliveries so we send one consolidated final message
-        const deliveryBuffer: string[] = [];
-
-        // Dispatch to agent system and stream responses back
+        // Dispatch to agent system — deliver each complete block as it arrives
         await dispatchReplyWithBufferedBlockDispatcher({
           ctx: ctxPayload,
           cfg,
           dispatcherOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            deliver: async (deliveryPayload: any, info: any) => {
+            deliver: async (deliveryPayload: any) => {
               if (deliveryPayload.text) {
-                deliveryBuffer.push(deliveryPayload.text);
-              }
-              // Only send the consolidated response on final delivery
-              if (info?.kind === 'final') {
-                progressStream?.stop();
-                const fullResponse = deliveryBuffer.join('\n\n');
-                if (fullResponse) {
-                  log.info(`[${accountId}] Delivering final response to ${payload.callback_url} (${deliveryBuffer.length} blocks)`);
-                  try {
-                    await sendToBasecamp(payload.callback_url, fullResponse);
-                    log.info(`[${accountId}] Response delivered successfully`);
-                  } catch (err) {
-                    log.error(`[${accountId}] Failed to deliver response`, { error: err });
-                    throw err;
-                  }
+                log.info(`[${accountId}] Delivering block to ${payload.callback_url}`);
+                try {
+                  await sendToBasecamp(payload.callback_url, deliveryPayload.text);
+                  log.info(`[${accountId}] Block delivered successfully`);
+                } catch (err) {
+                  log.error(`[${accountId}] Failed to deliver block`, { error: err });
+                  throw err;
                 }
               }
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any, info: any) => {
-              progressStream?.stop();
               log.error(`[${accountId}] ${info.kind} reply failed`, { error: err });
             },
           },
-          replyOptions: {
-            onPartialReply: progressStream
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ? (partial: any) => {
-                  if (partial.text) {
-                    progressStream!.update(partial.text);
-                  }
-                }
-              : undefined,
-          },
+          replyOptions: {},
         });
 
       } catch (error) {

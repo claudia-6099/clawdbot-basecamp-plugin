@@ -56,8 +56,6 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
         botName: config.botName,
         webhookPath: config.webhookPath,
         port: config.port,
-        streamProgress: config.streamProgress,
-        progressThrottleMs: config.progressThrottleMs,
         config: config,
       }),
       isConfigured: () => config.enabled && Boolean(config.webhookPath),

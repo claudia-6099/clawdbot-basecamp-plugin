@@ -20,8 +20,6 @@ describe('validateConfig', () => {
       botName: 'testbot',
       webhookPath: '/custom/webhook',
       port: 8080,
-      streamProgress: false,
-      progressThrottleMs: 10000,
     };
     const result = validateConfig(customConfig);
     expect(result).toEqual(customConfig);
@@ -49,7 +47,5 @@ describe('defaultConfig', () => {
     expect(defaultConfig.botName).toBe('claudia');
     expect(defaultConfig.webhookPath).toBe('/basecamp/webhook');
     expect(defaultConfig.port).toBe(3000);
-    expect(defaultConfig.streamProgress).toBe(true);
-    expect(defaultConfig.progressThrottleMs).toBe(5000);
   });
 });

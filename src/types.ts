@@ -53,10 +53,6 @@ export interface BasecampConfig {
   botName: string;
   webhookPath: string;
   port: number;
-  /** Enable periodic progress messages while the agent is generating a response (default: true) */
-  streamProgress?: boolean;
-  /** Minimum interval in ms between progress messages (default: 5000) */
-  progressThrottleMs?: number;
 }
 
 /**
