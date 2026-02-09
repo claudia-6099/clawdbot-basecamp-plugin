@@ -226,8 +226,8 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           AccountId: accountId,
           // Basecamp webhooks are inherently authenticated (creator is verified by Basecamp)
           CommandAuthorized: true,
-          // Chat type detection (direct ping vs group campfire)
-          ChatType: chatTypeResult.chatType !== 'unknown' ? chatTypeResult.chatType : undefined,
+          // Chat type detection (direct ping vs group campfire; defaults to direct)
+          ChatType: chatTypeResult.chatType !== 'unknown' ? chatTypeResult.chatType : 'direct',
           // Custom Basecamp fields for tools/scripts to access
           BasecampCallbackUrl: payload.callback_url, // For progress reporting
           To: payload.callback_url, // Standard target field

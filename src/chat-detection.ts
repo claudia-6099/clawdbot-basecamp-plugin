@@ -196,8 +196,8 @@ export async function getChatType(
   // 2. Get access token
   let accessToken = await getAccessToken(config, log);
   if (!accessToken) {
-    log?.warn('[chat-detection] No OAuth token available — cannot detect chat type');
-    return { chatType: 'unknown' };
+    log?.info('[chat-detection] No OAuth token configured — defaulting to direct');
+    return { chatType: 'direct' };
   }
 
   // 3. Query API
