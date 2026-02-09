@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { BasecampConfig } from './types.js';
 import { sendToBasecamp } from './send.js';
+import { createBasecampProgressStream, type BasecampProgressStream } from './progress-stream.js';
 
 interface Logger {
   info: (...args: unknown[]) => void;
@@ -219,6 +220,8 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           Provider: 'basecamp', // Required for OpenClaw to find channel dock and buildToolContext
           Surface: 'basecamp', // Alternative lookup field
           AccountId: accountId,
+          // Basecamp webhooks are inherently authenticated (creator is verified by Basecamp)
+          CommandAuthorized: true,
           // Custom Basecamp fields for tools/scripts to access
           BasecampCallbackUrl: payload.callback_url, // For progress reporting
           To: payload.callback_url, // Standard target field
@@ -226,13 +229,30 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
         log.info(`[${accountId}] Dispatching to agent with Body="${ctxPayload.Body}"`);
 
+        // Set up progress stream for live updates (if enabled)
+        const streamEnabled = config.streamProgress !== false;
+        let progressStream: BasecampProgressStream | undefined;
+        if (streamEnabled) {
+          progressStream = createBasecampProgressStream({
+            callbackUrl: payload.callback_url,
+            throttleMs: config.progressThrottleMs,
+            maxMessages: config.maxProgressMessages,
+            log: (msg) => log.info(`[${accountId}] [progress] ${msg}`),
+            warn: (msg) => log.warn(`[${accountId}] [progress] ${msg}`),
+          });
+        }
+
         // Dispatch to agent system and stream responses back
         await dispatchReplyWithBufferedBlockDispatcher({
           ctx: ctxPayload,
           cfg,
           dispatcherOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            deliver: async (deliveryPayload: any) => {
+            deliver: async (deliveryPayload: any, info: any) => {
+              // Stop progress messages before delivering the final response
+              if (info?.kind === 'final') {
+                progressStream?.stop();
+              }
               if (deliveryPayload.text) {
                 log.info(`[${accountId}] Delivering response to ${payload.callback_url}`);
                 try {
@@ -246,10 +266,20 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onError: (err: any, info: any) => {
+              progressStream?.stop();
               log.error(`[${accountId}] ${info.kind} reply failed`, { error: err });
             },
           },
-          replyOptions: {},
+          replyOptions: {
+            onPartialReply: progressStream
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ? (partial: any) => {
+                  if (partial.text) {
+                    progressStream!.update(partial.text);
+                  }
+                }
+              : undefined,
+          },
         });
 
       } catch (error) {

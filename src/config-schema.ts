@@ -8,6 +8,9 @@ export const defaultConfig: BasecampConfig = {
   botName: 'claudia',
   webhookPath: '/basecamp/webhook',
   port: 3000,
+  streamProgress: true,
+  progressThrottleMs: 5000,
+  maxProgressMessages: 3,
 };
 
 /**
@@ -19,6 +22,9 @@ export function validateConfig(config: Partial<BasecampConfig>): BasecampConfig 
     botName: config.botName ?? defaultConfig.botName,
     webhookPath: config.webhookPath ?? defaultConfig.webhookPath,
     port: config.port ?? defaultConfig.port,
+    streamProgress: config.streamProgress ?? defaultConfig.streamProgress,
+    progressThrottleMs: config.progressThrottleMs ?? defaultConfig.progressThrottleMs,
+    maxProgressMessages: config.maxProgressMessages ?? defaultConfig.maxProgressMessages,
   };
 }
 
@@ -48,6 +54,24 @@ export const configSchema = {
       type: 'number',
       default: 3000,
       description: 'Port for webhook server',
+    },
+    streamProgress: {
+      type: 'boolean',
+      default: true,
+      description: 'Send periodic progress messages while the agent is generating a response',
+    },
+    progressThrottleMs: {
+      type: 'number',
+      default: 5000,
+      minimum: 1000,
+      description: 'Minimum interval in ms between progress messages (minimum 1000)',
+    },
+    maxProgressMessages: {
+      type: 'number',
+      default: 3,
+      minimum: 1,
+      maximum: 10,
+      description: 'Maximum number of progress messages per response (1-10)',
     },
   },
 };
