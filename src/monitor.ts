@@ -244,7 +244,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         if (!isCommand) {
           thinkingTimer = setTimeout(() => {
             thinkingTimer = undefined;
-            sendToBasecamp(payload.callback_url, '<em>\uD83E\uDDE0 Pensando...</em>').catch((err) => {
+            sendToBasecamp(payload.callback_url, '<em>\uD83E\uDDE0 Thinking...</em>').catch((err) => {
               log.warn(`[${accountId}] Failed to send thinking indicator`, { error: err });
             });
           }, 3000);

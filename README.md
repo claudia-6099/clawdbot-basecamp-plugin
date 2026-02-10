@@ -14,7 +14,7 @@ Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
 - 🎨 **Rich HTML formatting** - Tables, details/summary, and standard HTML tags
 - ⚡ **Slash commands** - Full support for OpenClaw commands (`/new`, `/help`, etc.)
 - 🔍 **Chat type detection** - Automatically detects group campfires vs direct pings via Basecamp API
-- 🧠 **Thinking indicator** - Shows "Pensando..." feedback while the agent processes long requests
+- 🧠 **Thinking indicator** - Shows "Thinking..." feedback while the agent processes long requests
 - 🌊 **Block streaming** - Delivers each response block as it completes (no waiting for full response)
 - 📊 **Progress reporting** - Custom tools for reporting progress during long operations
 - 🔐 **OAuth integration** - Optional OAuth setup for chat type detection and API features
@@ -209,7 +209,7 @@ The bot should respond via OpenClaw!
    - Creates/resumes session for user (keyed by `callback_url + creator_id`)
    - Detects chat type (group campfire vs direct ping) via Basecamp API if OAuth is configured
    - Routes message to AI agent with full user context
-   - If 3 seconds pass without a response, sends a "Pensando..." thinking indicator
+   - If 3 seconds pass without a response, sends a "Thinking..." thinking indicator
 
 3. **OpenClaw → Basecamp**
    - Each response block is delivered to Basecamp as it completes (streaming)
@@ -230,7 +230,7 @@ All OpenClaw slash commands work in Basecamp (e.g., `/new`, `/help`, `/status`).
 
 ### Thinking Indicator
 
-When a user sends a non-command message, the plugin waits 3 seconds. If the agent hasn't produced any response blocks yet, it sends an italic "Pensando..." message to Basecamp so the user knows the bot is working. The indicator is automatically cancelled if a response arrives within 3 seconds.
+When a user sends a non-command message, the plugin waits 3 seconds. If the agent hasn't produced any response blocks yet, it sends an italic "Thinking..." message to Basecamp so the user knows the bot is working. The indicator is automatically cancelled if a response arrives within 3 seconds.
 
 ### Block Streaming
 
@@ -290,7 +290,7 @@ Since Basecamp does not provide webhook signature verification (unlike GitHub, S
 - `<details>` and `<summary>` tags (collapsible sections)
 - Slash commands (`/new`, `/help`, `/status`, etc.)
 - Block streaming (progressive response delivery)
-- Thinking indicator (automatic "Pensando..." for slow responses)
+- Thinking indicator (automatic "Thinking..." for slow responses)
 - Chat type detection (group vs direct, with OAuth)
 - Deferred responses (async processing)
 
