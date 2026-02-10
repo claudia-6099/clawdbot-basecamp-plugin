@@ -1,5 +1,7 @@
 # Basecamp Chatbot Plugin for OpenClaw
 
+[![CI](https://github.com/claudia-6099/clawdbot-basecamp-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/claudia-6099/clawdbot-basecamp-plugin/actions/workflows/ci.yml)
+
 Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
 
 > **Note:** Basecamp 4 uses the same API endpoints as Basecamp 3 (`3.basecamp.com`, `3.basecampapi.com`). The "3" in the URLs is the API version, not the product version.
