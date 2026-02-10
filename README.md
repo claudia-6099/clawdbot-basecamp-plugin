@@ -303,7 +303,9 @@ Since Basecamp does not provide webhook signature verification (unlike GitHub, S
 
 ## OAuth Setup (Optional)
 
-OAuth is **optional**. Without it, the plugin works normally — all chats are treated as direct conversations. OAuth enables chat type detection (group vs direct) via the Basecamp API.
+OAuth is **entirely optional** — the plugin works fully without it. The only thing OAuth enables is **chat type detection**: distinguishing between **Campfires** (group chats) and **Pings** (direct/individual chats). Without OAuth, all conversations are treated as Pings (direct).
+
+If your bot only operates in one type of chat, or you don't need OpenClaw to behave differently based on chat type, you can skip this section entirely.
 
 ### 1. Register a Basecamp OAuth App
 
