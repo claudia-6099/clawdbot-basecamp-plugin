@@ -28,45 +28,30 @@ Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
 
 ```bash
 git clone https://github.com/claudia-6099/clawdbot-basecamp-plugin.git
-cd clawdbot-basecamp-plugin
-npm install --legacy-peer-deps
+openclaw plugins install ./clawdbot-basecamp-plugin
 ```
 
-### 2. Add to OpenClaw config
-
-```json
-{
-  "plugins": {
-    "load": {
-      "paths": ["/path/to/clawdbot-basecamp-plugin"]
-    },
-    "entries": {
-      "basecamp": {
-        "enabled": true,
-        "config": {
-          "botName": "handy",
-          "webhookPath": "/basecamp/webhook"
-        }
-      }
-    }
-  }
-}
+Use the `-l` flag for development (creates a symlink instead of copying):
+```bash
+openclaw plugins install -l ./clawdbot-basecamp-plugin
 ```
 
-### 3. Restart and verify
+### 2. Configure and restart
 
 ```bash
 openclaw gateway restart
 openclaw plugins list
 ```
 
-### 4. Create a chatbot integration in Basecamp and test
+You should see `basecamp` in the list of loaded plugins. See [Configuration](docs/configuration.md) for available options.
+
+### 3. Create a chatbot integration in Basecamp and test
 
 ```
 !handy hello
 ```
 
-See [Basecamp Setup](docs/basecamp-setup.md) for detailed instructions.
+See [Basecamp Setup](docs/basecamp-setup.md) for detailed instructions on creating the Basecamp chatbot integration.
 
 ## Documentation
 
