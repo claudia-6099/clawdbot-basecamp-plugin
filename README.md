@@ -7,16 +7,16 @@ Integrate Basecamp 3 chatbots as a native OpenClaw messaging channel.
 
 ## Features
 
-✅ **Webhook-based messaging** - Receives messages from Basecamp via webhooks
-✅ **Session management** - Automatic per-user session handling (isolated per person per chat)
-✅ **Rich HTML formatting** - Tables, details/summary, and standard HTML tags
-✅ **Slash commands** - Full support for OpenClaw commands (`/new`, `/help`, etc.)
-✅ **Chat type detection** - Automatically detects group campfires vs direct pings via Basecamp API
-✅ **Thinking indicator** - Shows "Pensando..." feedback while the agent processes long requests
-✅ **Block streaming** - Delivers each response block as it completes (no waiting for full response)
-✅ **Progress reporting** - Custom tools for reporting progress during long operations
-✅ **OAuth integration** - Optional OAuth setup for chat type detection and API features
-✅ **Minimal configuration** - Works out of the box; OAuth and advanced features are optional
+- ✅ **Webhook-based messaging** - Receives messages from Basecamp via webhooks
+- ✅ **Session management** - Automatic per-user session handling (isolated per person per chat)
+- ✅ **Rich HTML formatting** - Tables, details/summary, and standard HTML tags
+- ✅ **Slash commands** - Full support for OpenClaw commands (`/new`, `/help`, etc.)
+- ✅ **Chat type detection** - Automatically detects group campfires vs direct pings via Basecamp API
+- ✅ **Thinking indicator** - Shows "Pensando..." feedback while the agent processes long requests
+- ✅ **Block streaming** - Delivers each response block as it completes (no waiting for full response)
+- ✅ **Progress reporting** - Custom tools for reporting progress during long operations
+- ✅ **OAuth integration** - Optional OAuth setup for chat type detection and API features
+- ✅ **Minimal configuration** - Works out of the box; OAuth and advanced features are optional
 
 > **Note:** This plugin is designed to be installed locally from source.
 > This provides more flexibility for customization and direct integration with your OpenClaw instance.
