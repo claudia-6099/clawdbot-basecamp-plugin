@@ -3,7 +3,9 @@
 [![CI](https://github.com/claudia-6099/clawdbot-basecamp-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/claudia-6099/clawdbot-basecamp-plugin/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/claudia-6099/clawdbot-basecamp-plugin/branch/main/graph/badge.svg)](https://codecov.io/gh/claudia-6099/clawdbot-basecamp-plugin)
 
-Integrate Basecamp 3 chatbots as a native OpenClaw messaging channel.
+Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
+
+> **Note:** Basecamp 4 uses the same API endpoints as Basecamp 3 (`3.basecamp.com`, `3.basecampapi.com`). The "3" in the URLs is the API version, not the product version.
 
 ## Features
 
@@ -59,7 +61,7 @@ Add the plugin path and channel configuration to your OpenClaw config:
         "enabled": true,
         "config": {
           "enabled": true,
-          "botName": "claudia",
+          "botName": "handy",
           "webhookPath": "/basecamp/webhook",
           "port": 3000
         }
@@ -104,7 +106,7 @@ curl -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Claudia Bot",
+    "name": "Handy Bot",
     "command_url": "https://your-server.com/basecamp/webhook"
   }' \
   https://3.basecampapi.com/$ACCOUNT_ID/buckets/$BUCKET_ID/chats/$CHAT_ID/integrations.json
@@ -123,7 +125,7 @@ curl -X POST \
 
 In your Basecamp chat, trigger the bot:
 ```
-@claudia hello
+!handy hello
 ```
 
 The bot should respond via OpenClaw!
@@ -135,7 +137,7 @@ The bot should respond via OpenClaw!
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | boolean | `true` | Enable/disable the plugin |
-| `botName` | string | `"claudia"` | Bot trigger name in Basecamp |
+| `botName` | string | `"handy"` | Bot trigger name in Basecamp |
 | `webhookPath` | string | `"/basecamp/webhook"` | Webhook endpoint path |
 | `port` | number | `3000` | Server port (usually gateway port) |
 | `oauth.clientId` | string | — | Basecamp OAuth app client ID (optional) |
@@ -166,7 +168,7 @@ The bot should respond via OpenClaw!
       "basecamp": {
         "enabled": true,
         "config": {
-          "botName": "claudia",
+          "botName": "handy",
           "oauth": {
             "clientId": "your-client-id",
             "clientSecret": "your-client-secret",
@@ -204,7 +206,7 @@ The bot should respond via OpenClaw!
 ### Message Flow
 
 1. **Basecamp → OpenClaw**
-   - User mentions `@claudia` in Basecamp chat
+   - User mentions `!handy` in Basecamp chat
    - Basecamp sends webhook to `https://your-server.com/basecamp/webhook`
    - Plugin receives webhook, validates callback URL domain, and applies rate limiting
 
@@ -313,7 +315,7 @@ OAuth is **optional**. Without it, the plugin works normally — all chats are t
 1. Go to [https://launchpad.37signals.com/integrations](https://launchpad.37signals.com/integrations)
 2. Click **Register an application**
 3. Fill in:
-   - **Name:** Your bot name (e.g., "Claudia Bot")
+   - **Name:** Your bot name (e.g., "Handy Bot")
    - **Redirect URI:** Your redirect URI (e.g., `http://localhost:3000/basecamp/oauth/callback`)
 4. Note the **Client ID** and **Client Secret**
 
@@ -344,19 +346,19 @@ In any Basecamp chat where the bot is installed:
 
 1. **Get the authorization URL:**
    ```
-   @claudia /basecamp-auth
+   !handy /basecamp-auth
    ```
    The bot will reply with a URL. Open it in your browser and authorize the app.
 
 2. **Submit the authorization code:**
    ```
-   @claudia /basecamp-token AUTH_CODE_HERE
+   !handy /basecamp-token AUTH_CODE_HERE
    ```
    The bot will exchange the code for access and refresh tokens, stored securely at `~/.openclaw/credentials/basecamp-oauth.json`.
 
 3. **Verify status:**
    ```
-   @claudia /basecamp-status
+   !handy /basecamp-status
    ```
    Shows whether OAuth is configured, token validity, and cache statistics.
 
@@ -368,7 +370,7 @@ In any Basecamp chat where the bot is installed:
 
 ## Bot Commands
 
-These commands are available via the Basecamp chat (prefix with `@botname`):
+These commands are available via the Basecamp chat (prefix with `!botname`):
 
 | Command | Description |
 |---------|-------------|
@@ -534,7 +536,7 @@ curl -X POST http://localhost:3000/basecamp/webhook \
 ### Bot not responding in Basecamp
 
 **Common causes:**
-1. Bot name mismatch (config: `claudia`, Basecamp trigger: `@assistant`)
+1. Bot name mismatch (config: `handy`, Basecamp trigger: `!other-name`)
 2. Session creation failed (check OpenClaw logs)
 3. Callback URL unreachable (Basecamp must reach your server)
 
