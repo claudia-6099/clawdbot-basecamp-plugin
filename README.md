@@ -20,8 +20,8 @@ Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
 - 🔐 **OAuth integration** - Optional OAuth setup for chat type detection and API features
 - ⚙️ **Minimal configuration** - Works out of the box; OAuth and advanced features are optional
 
-> **Note:** This plugin is designed to be installed locally from source.
-> This provides more flexibility for customization and direct integration with your OpenClaw instance.
+> **Note:** This is a community plugin and is **not available** in the official OpenClaw plugin registry.
+> The only way to install it is by cloning the repository from source.
 
 ## Installation
 
@@ -37,11 +37,6 @@ Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
 git clone https://github.com/claudia-6099/clawdbot-basecamp-plugin.git
 cd clawdbot-basecamp-plugin
 npm install --legacy-peer-deps
-```
-
-Or install via the OpenClaw CLI:
-```bash
-openclaw plugins install @openclaw/basecamp
 ```
 
 ### Step 2: Add to OpenClaw Configuration
