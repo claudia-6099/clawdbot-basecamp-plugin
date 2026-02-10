@@ -7,7 +7,7 @@ import type { BasecampConfig } from './src/types.js';
 /**
  * Basecamp Chatbot Plugin for OpenClaw
  *
- * Integrates Basecamp 3 chatbots as a native OpenClaw channel.
+ * Integrates Basecamp 4 chatbots as a native OpenClaw channel.
  *
  * @example
  * // In your OpenClaw config:
@@ -15,7 +15,6 @@ import type { BasecampConfig } from './src/types.js';
  *   channels: {
  *     basecamp: {
  *       enabled: true,
- *       botName: "claudia",
  *       webhookPath: "/basecamp/webhook"
  *     }
  *   }
@@ -24,7 +23,7 @@ import type { BasecampConfig } from './src/types.js';
 export default {
   id: 'basecamp',
   name: 'Basecamp Channel',
-  description: 'Basecamp 3 chatbot integration channel for OpenClaw',
+  description: 'Basecamp 4 chatbot integration channel for OpenClaw',
 
   register(api: OpenClawPluginApi) {
     const log = api.runtime.logging.getChildLogger('basecamp');
@@ -63,6 +62,5 @@ export default {
     });
 
     log.info('Plugin initialized successfully');
-    log.info(`Bot name: ${config.botName}`);
   },
 };

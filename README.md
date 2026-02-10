@@ -36,22 +36,37 @@ Use the `-l` flag for development (creates a symlink instead of copying):
 openclaw plugins install -l ./clawdbot-basecamp-plugin
 ```
 
-### 2. Configure and restart
+### 2. Restart OpenClaw
 
 ```bash
 openclaw gateway restart
 openclaw plugins list
 ```
 
-You should see `basecamp` in the list of loaded plugins. See [Configuration](docs/configuration.md) for available options.
+You should see `basecamp` in the list of loaded plugins.
 
-### 3. Create a chatbot integration in Basecamp and test
+### 3. Create a chatbot in Basecamp
 
+Register a chatbot integration in each Basecamp Campfire or Ping where you want the bot, pointing its `command_url` to your publicly accessible OpenClaw webhook URL:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Handy", "command_url": "https://your-domain.com/basecamp/webhook"}' \
+  https://3.basecampapi.com/$ACCOUNT_ID/buckets/$BUCKET_ID/chats/$CHAT_ID/integrations.json
+```
+
+Your OpenClaw instance must be reachable from the internet (e.g., via ngrok, Cloudflare Tunnel, or a reverse proxy like Caddy/nginx routing to the gateway).
+
+### 4. Test
+
+In your Basecamp chat, mention the bot:
 ```
 !handy hello
 ```
 
-See [Basecamp Setup](docs/basecamp-setup.md) for detailed instructions on creating the Basecamp chatbot integration.
+See [Basecamp Setup](docs/basecamp-setup.md) for detailed instructions.
 
 ## Documentation
 

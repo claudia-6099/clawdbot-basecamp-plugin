@@ -1,37 +1,51 @@
 # Basecamp Setup
 
-## 1. Get Your Account ID
+## Prerequisites
 
-Your Basecamp Account ID is in any Basecamp URL:
-- Account ID: `https://3.basecamp.com/[ACCOUNT_ID]/...`
+- OpenClaw gateway running with the Basecamp plugin installed
+- A **publicly accessible URL** pointing to your OpenClaw instance (e.g., via ngrok, Cloudflare Tunnel, or a reverse proxy like Caddy/nginx)
+- A Basecamp account with admin access to create chatbot integrations
 
-## 2. Create Chatbot Integration
+## 1. Get Your IDs
 
-For each Basecamp chat/campfire where you want the bot:
+You'll need three IDs from Basecamp, all visible in the URL when you navigate to a chat:
+
+```
+https://3.basecamp.com/[ACCOUNT_ID]/buckets/[BUCKET_ID]/chats/[CHAT_ID]
+```
+
+- **Account ID** — Your Basecamp organization ID
+- **Bucket ID** — The project ID containing the chat
+- **Chat ID** — The specific Campfire or Ping chat ID
+
+## 2. Get an Access Token
+
+You need a Basecamp API token to create the chatbot integration. See [Basecamp's authentication guide](https://github.com/basecamp/api/blob/master/sections/authentication.md) for how to obtain one.
+
+## 3. Create the Chatbot Integration
+
+Register a chatbot in each Basecamp Campfire where you want the bot. The `command_url` must point to your publicly accessible OpenClaw webhook endpoint:
 
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Handy Bot",
-    "command_url": "https://your-server.com/basecamp/webhook"
+    "name": "Handy",
+    "command_url": "https://your-domain.com/basecamp/webhook"
   }' \
   https://3.basecampapi.com/$ACCOUNT_ID/buckets/$BUCKET_ID/chats/$CHAT_ID/integrations.json
 ```
 
-**Required:**
-- `$ACCESS_TOKEN` - Your Basecamp OAuth token ([how to get it](https://github.com/basecamp/api/blob/master/sections/authentication.md))
-- `$ACCOUNT_ID` - Your Basecamp account ID
-- `$BUCKET_ID` - The project/bucket ID containing the chat
-- `$CHAT_ID` - The specific chat/campfire ID
-- `https://your-server.com/basecamp/webhook` - Your public webhook URL (where OpenClaw is accessible)
+**Important:**
+- The `name` field is the bot's trigger name in Basecamp — users will type `!name` to invoke it
+- The `command_url` must be reachable from the internet — Basecamp sends webhooks to this URL
+- The webhook path must match your plugin config (default: `/basecamp/webhook`)
+- The API base URL `https://3.basecampapi.com/` is fixed — the "3" is the API version, not the product version
 
-**Note:** The base URL `https://3.basecampapi.com/` is fixed — it's Basecamp's official API endpoint. The "3" is the API version, not the product version.
+## 4. Test the Integration
 
-## 3. Test the Integration
-
-In your Basecamp chat, trigger the bot:
+In your Basecamp chat, mention the bot:
 ```
 !handy hello
 ```
@@ -49,7 +63,7 @@ If your bot only operates in one type of chat, or you don't need OpenClaw to beh
 1. Go to [https://launchpad.37signals.com/integrations](https://launchpad.37signals.com/integrations)
 2. Click **Register an application**
 3. Fill in:
-   - **Name:** Your bot name (e.g., "Handy Bot")
+   - **Name:** Your bot name (e.g., "Handy")
    - **Redirect URI:** Your redirect URI (e.g., `http://localhost:3000/basecamp/oauth/callback`)
 4. Note the **Client ID** and **Client Secret**
 

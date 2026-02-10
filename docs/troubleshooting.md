@@ -40,7 +40,7 @@ curl -X POST http://localhost:3000/basecamp/webhook \
 ## Bot not responding in Basecamp
 
 **Common causes:**
-1. Bot name mismatch (config: `handy`, Basecamp trigger: `!other-name`)
+1. Bot name mismatch between Basecamp integration and what you're typing (e.g., created as `handy` but typing `!assistant`)
 2. Session creation failed (check OpenClaw logs)
 3. Callback URL unreachable (Basecamp must reach your server)
 

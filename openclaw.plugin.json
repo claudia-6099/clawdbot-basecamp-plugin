@@ -2,7 +2,7 @@
   "id": "basecamp",
   "name": "Basecamp Channel",
   "version": "1.0.0",
-  "description": "Basecamp 3 chatbot integration channel for OpenClaw",
+  "description": "Basecamp 4 chatbot integration channel for OpenClaw",
   "channels": ["basecamp"],
   "configSchema": {
     "type": "object",
@@ -11,10 +11,6 @@
       "enabled": {
         "type": "boolean",
         "default": true
-      },
-      "botName": {
-        "type": "string",
-        "default": "claudia"
       },
       "webhookPath": {
         "type": "string",
@@ -29,10 +25,6 @@
   "uiHints": {
     "enabled": {
       "label": "Enable Basecamp Channel"
-    },
-    "botName": {
-      "label": "Bot Name",
-      "placeholder": "claudia"
     },
     "webhookPath": {
       "label": "Webhook Path",

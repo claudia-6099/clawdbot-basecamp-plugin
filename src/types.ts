@@ -68,7 +68,6 @@ export interface ChatTypeCacheEntry {
  */
 export interface BasecampConfig {
   enabled: boolean;
-  botName: string;
   webhookPath: string;
   port: number;
   /** OAuth configuration for Basecamp API access */

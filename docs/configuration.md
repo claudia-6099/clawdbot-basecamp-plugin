@@ -5,7 +5,6 @@
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | boolean | `true` | Enable/disable the plugin |
-| `botName` | string | `"handy"` | Bot trigger name in Basecamp |
 | `webhookPath` | string | `"/basecamp/webhook"` | Webhook endpoint path |
 | `port` | number | `3000` | Server port (usually gateway port) |
 | `oauth.clientId` | string | — | Basecamp OAuth app client ID (optional) |
@@ -36,7 +35,6 @@
       "basecamp": {
         "enabled": true,
         "config": {
-          "botName": "handy",
           "oauth": {
             "clientId": "your-client-id",
             "clientSecret": "your-client-secret",
@@ -52,7 +50,7 @@
 }
 ```
 
-**Custom bot name and webhook path:**
+**Custom webhook path:**
 ```json
 {
   "plugins": {
@@ -60,7 +58,6 @@
       "basecamp": {
         "enabled": true,
         "config": {
-          "botName": "assistant",
           "webhookPath": "/webhook/basecamp"
         }
       }

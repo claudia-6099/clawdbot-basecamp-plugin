@@ -29,10 +29,10 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
     meta: {
       id: 'basecamp',
       label: 'Basecamp',
-      selectionLabel: 'Basecamp 3 Chatbots',
+      selectionLabel: 'Basecamp 4 Chatbots',
       docsPath: '/channels/basecamp',
       docsLabel: 'basecamp',
-      blurb: 'Integrate with Basecamp 3 chatbots via webhooks.',
+      blurb: 'Integrate with Basecamp 4 chatbots via webhooks.',
       aliases: ['bc', 'basecamp3'],
     },
     capabilities: {
@@ -61,7 +61,6 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
       resolveAccount: (_cfg: unknown, accountId?: string) => ({
         accountId: accountId ?? 'default',
         enabled: config.enabled,
-        botName: config.botName,
         webhookPath: config.webhookPath,
         port: config.port,
         config: config,
@@ -70,7 +69,7 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       describeAccount: (account: any) => ({
         accountId: account.accountId || 'default',
-        name: account.botName || config.botName,
+        name: 'Basecamp Bot',
         enabled: config.enabled,
         configured: true,
         webhookPath: config.webhookPath,

@@ -47,7 +47,6 @@ clawdbot-basecamp-plugin/
   channels: {
     basecamp: {
       enabled: true,
-      botName: "claudia",              // Bot name for Basecamp
       webhookPath: "/basecamp/webhook", // Webhook endpoint
       port: 3000                        // Configurable port
     }

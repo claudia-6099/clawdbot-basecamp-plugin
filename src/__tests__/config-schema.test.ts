@@ -7,17 +7,15 @@ describe('validateConfig', () => {
   });
 
   it('should merge partial config with defaults', () => {
-    const result = validateConfig({ botName: 'mybot' });
-    expect(result.botName).toBe('mybot');
+    const result = validateConfig({ webhookPath: '/custom' });
+    expect(result.webhookPath).toBe('/custom');
     expect(result.enabled).toBe(defaultConfig.enabled);
-    expect(result.webhookPath).toBe(defaultConfig.webhookPath);
     expect(result.port).toBe(defaultConfig.port);
   });
 
   it('should override all defaults when full config provided', () => {
     const customConfig = {
       enabled: false,
-      botName: 'testbot',
       webhookPath: '/custom/webhook',
       port: 8080,
       oauth: { clientId: 'test-id', clientSecret: 'test-secret', redirectUri: 'http://localhost' },
@@ -46,7 +44,6 @@ describe('validateConfig', () => {
 describe('defaultConfig', () => {
   it('should have expected default values', () => {
     expect(defaultConfig.enabled).toBe(true);
-    expect(defaultConfig.botName).toBe('claudia');
     expect(defaultConfig.webhookPath).toBe('/basecamp/webhook');
     expect(defaultConfig.port).toBe(3000);
   });

@@ -5,7 +5,6 @@ import type { BasecampConfig } from './types.js';
  */
 export const defaultConfig: BasecampConfig = {
   enabled: true,
-  botName: 'claudia',
   webhookPath: '/basecamp/webhook',
   port: 3000,
 };
@@ -16,7 +15,6 @@ export const defaultConfig: BasecampConfig = {
 export function validateConfig(config: Partial<BasecampConfig>): BasecampConfig {
   return {
     enabled: config.enabled ?? defaultConfig.enabled,
-    botName: config.botName ?? defaultConfig.botName,
     webhookPath: config.webhookPath ?? defaultConfig.webhookPath,
     port: config.port ?? defaultConfig.port,
     oauth: config.oauth,
@@ -35,11 +33,6 @@ export const configSchema = {
       type: 'boolean',
       default: true,
       description: 'Enable/disable the Basecamp channel',
-    },
-    botName: {
-      type: 'string',
-      default: 'claudia',
-      description: 'Name of the bot in Basecamp',
     },
     webhookPath: {
       type: 'string',

@@ -3,7 +3,7 @@
 ## Message Flow
 
 1. **Basecamp → OpenClaw**
-   - User mentions `!handy` in Basecamp chat
+   - User mentions `!botname` in Basecamp chat (name configured in Basecamp, not in the plugin)
    - Basecamp sends webhook to `https://your-server.com/basecamp/webhook`
    - Plugin receives webhook, validates callback URL domain, and applies rate limiting
 
