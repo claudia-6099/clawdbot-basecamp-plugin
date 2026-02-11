@@ -1,3 +1,16 @@
+/**
+ * @deprecated Legacy webhook handling code - DO NOT USE
+ *
+ * This file contains an older implementation that creates sessions using
+ * only callback_url (line 80), which causes conversation contamination
+ * when multiple users share the same chatbot.
+ *
+ * Active webhook handling is in monitor.ts, which correctly includes
+ * user ID in session construction (line 185).
+ *
+ * This file is retained only for reference and will be removed in v2.0.0.
+ */
+
 import type { BasecampWebhookPayload, BasecampSession } from './types.js';
 
 /**
@@ -75,9 +88,17 @@ export async function handleWebhook(
 
 /**
  * Get or create a session for this callback_url
+ * @deprecated Uses callback_url only - causes session contamination
+ *
+ * PROBLEM: This function creates sessions using only the callback_url,
+ * which means all users sharing the same Basecamp chatbot get routed
+ * to the same session. This causes conversation contamination.
+ *
+ * SOLUTION: Use monitor.ts instead, which includes user ID in the
+ * session key construction (callback_url:user:creator_id).
  */
 function getOrCreateSession(payload: BasecampWebhookPayload): BasecampSession {
-  const sessionId = payload.callback_url;
+  const sessionId = payload.callback_url;  // ← BROKEN: Missing user ID
 
   let session = sessions.get(sessionId);
 

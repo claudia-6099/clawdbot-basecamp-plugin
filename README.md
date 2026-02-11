@@ -9,7 +9,7 @@ Integrate Basecamp 4 chatbots as a native OpenClaw messaging channel.
 ## Features
 
 - 🪝 **Webhook-based messaging** — Receives messages from Basecamp via webhooks
-- 👤 **Session management** — Automatic per-user session handling (isolated per person per chat)
+- 👤 **Session isolation** — Per-user session handling when properly configured (see [Session Configuration](docs/session-configuration.md))
 - 🎨 **Rich HTML formatting** — Tables, details/summary, and standard HTML tags
 - ⚡ **Slash commands** — Full support for OpenClaw commands (`/new`, `/help`, etc.)
 - 🔍 **Chat type detection** — Automatically detects Campfires (group) vs Pings (direct) via Basecamp API
@@ -59,7 +59,30 @@ curl -X POST \
 
 Your OpenClaw instance must be reachable from the internet (e.g., via ngrok, Cloudflare Tunnel, or a reverse proxy like Caddy/nginx routing to the gateway).
 
-### 4. Test
+### 4. Configure session isolation
+
+**⚠️ CRITICAL: This step is required to prevent conversation contamination.**
+
+Add this to your OpenClaw configuration (`~/.openclaw/openclaw.json`):
+
+```json
+{
+  "session": {
+    "dmScope": "per-channel-peer"
+  }
+}
+```
+
+Without this configuration, **all users will share ONE session**, causing conversations to mix together.
+
+After adding the configuration:
+```bash
+openclaw gateway restart
+```
+
+See [Session Configuration Guide](docs/session-configuration.md) for details.
+
+### 5. Test
 
 In your Basecamp chat, mention the bot:
 ```
@@ -73,6 +96,7 @@ See [Basecamp Setup](docs/basecamp-setup.md) for detailed instructions.
 | Document | Description |
 |----------|-------------|
 | [Basecamp Setup](docs/basecamp-setup.md) | Chatbot integration, OAuth authentication (optional) |
+| [Session Configuration](docs/session-configuration.md) | **Required:** Session isolation setup to prevent conversation contamination |
 | [Configuration](docs/configuration.md) | Config schema, examples, session context variables |
 | [How It Works](docs/how-it-works.md) | Message flow, sessions, streaming, chat detection, progress reporting |
 | [Security](docs/security.md) | Webhook security, rate limiting, best practices |

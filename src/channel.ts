@@ -141,9 +141,23 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
         currentChannelId: context.To?.trim() || undefined, // callback_url is the target
         currentChannelProvider: 'basecamp' as const,
         hasRepliedRef,
+
+        // User identity fields (from monitor.ts context)
+        currentUserId: context.UserId,
+        currentUserName: context.UserName,
+        currentUserEmail: context.UserEmail,
+
         // Basecamp-specific fields
         basecampCallbackUrl: context.To, // To = callback_url
         basecampTarget: context.To,
+        basecampCreatorId: context.UserId,
+        basecampCreatorName: context.UserName,
+        basecampCreatorEmail: context.UserEmail,
+        basecampChatType: context.ChatType,
+        basecampChatName: context.ChatName,
+
+        // Session debugging
+        sessionFrom: context.From,
       }),
     },
     actions: {
@@ -278,6 +292,39 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
       startAccount: async (ctx: any) => {
         const accountId = ctx.accountId ?? 'default';
         log.info(`Starting Basecamp channel for account: ${accountId}`);
+
+        // Validate session configuration to prevent conversation contamination
+        const dmScope = ctx.cfg?.session?.dmScope ?? 'main';
+
+        if (dmScope === 'main') {
+          log.warn(`
+╔════════════════════════════════════════════════════════════════════════╗
+║ ⚠️  BASECAMP SESSION CONTAMINATION RISK DETECTED                       ║
+╟────────────────────────────────────────────────────────────────────────╢
+║ Current configuration: session.dmScope = "main" (or not set)          ║
+║                                                                        ║
+║ This will cause CONVERSATION CONTAMINATION when multiple users share  ║
+║ the same Basecamp chatbot. All users will be routed to ONE session.   ║
+║                                                                        ║
+║ REQUIRED FIX:                                                          ║
+║ Add to ~/.openclaw/openclaw.json:                                     ║
+║                                                                        ║
+║   {                                                                    ║
+║     "session": {                                                       ║
+║       "dmScope": "per-channel-peer"                                    ║
+║     }                                                                  ║
+║   }                                                                    ║
+║                                                                        ║
+║ Then restart: openclaw gateway restart                                ║
+║                                                                        ║
+║ See docs/session-configuration.md for details and troubleshooting.    ║
+╚════════════════════════════════════════════════════════════════════════╝
+          `.trim());
+        } else if (dmScope === 'per-peer') {
+          log.warn(`[Basecamp] session.dmScope = "per-peer" may cause issues in multi-channel setups. Recommended: "per-channel-peer"`);
+        } else {
+          log.info(`[Basecamp] Session isolation active: dmScope = "${dmScope}" ✓`);
+        }
 
         // Start monitoring webhooks
         const cleanup = await monitorBasecampProvider({

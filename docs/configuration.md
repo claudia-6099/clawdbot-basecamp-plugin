@@ -1,5 +1,68 @@
 # Configuration
 
+## Session Configuration (Required)
+
+**⚠️ CRITICAL:** You must configure session isolation to prevent conversation contamination.
+
+This is a **global OpenClaw setting**, not part of the plugin configuration. Add this to the top level of `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "session": {
+    "dmScope": "per-channel-peer"
+  }
+}
+```
+
+**Then restart:**
+```bash
+openclaw gateway restart
+```
+
+### ✅ Correct Placement (Top Level)
+
+```json
+{
+  "session": {
+    "dmScope": "per-channel-peer"
+  },
+  "plugins": {
+    "entries": {
+      "basecamp": {
+        "enabled": true
+      }
+    }
+  }
+}
+```
+
+### ❌ Wrong Placement (Inside Plugin Config)
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "basecamp": {
+        "enabled": true,
+        "config": {
+          "session": {
+            "dmScope": "per-channel-peer"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+The session configuration **must be at the top level** because it controls OpenClaw's routing layer, which runs before the plugin processes messages.
+
+Without this configuration, all users will share one session and their conversations will mix together.
+
+See [Session Configuration Guide](session-configuration.md) for detailed explanation and troubleshooting.
+
+---
+
 ## Config Schema
 
 | Field | Type | Default | Description |
