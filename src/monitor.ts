@@ -250,6 +250,77 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           }, 3000);
         }
 
+        // Handle plugin-specific commands before dispatching to agent
+        const pluginCommands = ['/basecamp-auth', '/basecamp-token', '/basecamp-status'];
+        const commandMatch = pluginCommands.find(cmd =>
+          payload.command.trimStart().toLowerCase().startsWith(cmd)
+        );
+
+        if (commandMatch) {
+          log.info(`[${accountId}] Handling plugin command: ${commandMatch}`);
+
+          // Import the channel action handler
+          const { createBasecampChannel } = await import('./channel.js');
+          const channel = createBasecampChannel(config, log, runtime);
+
+          // Determine action name and parameters
+          let action: string;
+          let params: Record<string, unknown> = {};
+
+          if (commandMatch === '/basecamp-auth') {
+            action = 'basecamp-auth';
+          } else if (commandMatch === '/basecamp-token') {
+            action = 'basecamp-token';
+            // Extract the token/code from the command
+            const parts = payload.command.trim().split(/\s+/);
+            if (parts.length > 1) {
+              params.code = parts.slice(1).join(' ');
+            }
+          } else if (commandMatch === '/basecamp-status') {
+            action = 'basecamp-status';
+          } else {
+            action = '';
+          }
+
+          // Build tool context
+          const toolContext = {
+            currentChannelId: payload.callback_url,
+            currentChannelProvider: 'basecamp' as const,
+            basecampCallbackUrl: payload.callback_url,
+            basecampTarget: payload.callback_url,
+          };
+
+          try {
+            // Call the action handler
+            const result = await channel.actions.handleAction({ action, params, toolContext });
+
+            // Extract the response text
+            let responseText = '';
+            if (result.content && Array.isArray(result.content)) {
+              for (const item of result.content) {
+                if (item.type === 'text' && item.text) {
+                  responseText += item.text + '\n';
+                }
+              }
+            }
+
+            // Send the response back to Basecamp
+            if (responseText.trim()) {
+              await sendToBasecamp(payload.callback_url, responseText.trim());
+              log.info(`[${accountId}] Plugin command response sent`);
+            }
+          } catch (error) {
+            log.error(`[${accountId}] Plugin command failed`, { error });
+            await sendToBasecamp(
+              payload.callback_url,
+              `Error executing ${commandMatch}: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+          }
+
+          // Don't dispatch to agent - command was handled
+          return;
+        }
+
         // Dispatch to agent system — deliver each complete block as it arrives
         await dispatchReplyWithBufferedBlockDispatcher({
           ctx: ctxPayload,
