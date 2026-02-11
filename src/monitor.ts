@@ -214,7 +214,10 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
         const ctxPayload: Record<string, unknown> = {
           From: sessionId, // Unique session per person
-          UserName: payload.creator.name,
+          SenderName: payload.creator.name, // OpenClaw uses this for "You are talking to X"
+          SenderId: payload.creator.id.toString(),
+          SenderUsername: payload.creator.email_address,
+          UserName: payload.creator.name, // Keep for backward compatibility
           UserEmail: payload.creator.email_address,
           UserId: payload.creator.id.toString(),
           Body: bodyWithUser,
