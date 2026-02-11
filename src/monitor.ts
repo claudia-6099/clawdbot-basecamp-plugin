@@ -265,7 +265,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
 
           // Determine action name and parameters
           let action: string;
-          let params: Record<string, unknown> = {};
+          const params: Record<string, unknown> = {};
 
           if (commandMatch === '/basecamp-auth') {
             action = 'basecamp-auth';
