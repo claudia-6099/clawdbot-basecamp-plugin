@@ -324,6 +324,12 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           return;
         }
 
+        // Compute block streaming preference from config (matches other channels)
+        const disableBlockStreaming =
+          typeof config.blockStreaming === "boolean"
+            ? !config.blockStreaming
+            : undefined;
+
         // Dispatch to agent system — deliver each complete block as it arrives
         await dispatchReplyWithBufferedBlockDispatcher({
           ctx: ctxPayload,
@@ -356,7 +362,9 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
               log.error(`[${accountId}] ${info.kind} reply failed`, { error: err });
             },
           },
-          replyOptions: {},
+          replyOptions: {
+            disableBlockStreaming,
+          },
         });
 
       } catch (error) {

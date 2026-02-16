@@ -81,6 +81,8 @@ export interface BasecampConfig {
     /** Cache TTL in days (default: 7) */
     ttlDays?: number;
   };
+  /** Enable block streaming to deliver response blocks incrementally */
+  blockStreaming?: boolean;
 }
 
 /**

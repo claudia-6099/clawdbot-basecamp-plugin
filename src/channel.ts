@@ -92,6 +92,12 @@ export function createBasecampChannel(config: BasecampConfig, log: Logger, runti
         },
       },
     },
+    streaming: {
+      blockStreamingCoalesceDefaults: {
+        minChars: 200,
+        idleMs: 500,
+      },
+    },
     outbound: {
       deliveryMode: 'direct' as const,
       // Resolve/validate targets - accept any valid Basecamp callback URL
