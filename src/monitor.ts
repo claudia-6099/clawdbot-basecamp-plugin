@@ -123,6 +123,8 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
   const { registerPluginHttpRoute, normalizePluginHttpPath } = sdk;
   // Use runtime for dispatch function (not exported from SDK directly)
   const dispatchReplyWithBufferedBlockDispatcher = runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher;
+  // Use runtime routing to compute proper per-user session keys
+  const resolveAgentRoute = runtime.channel.routing.resolveAgentRoute;
 
   const normalizedPath = normalizePluginHttpPath(config.webhookPath, '/basecamp/webhook') ?? '/basecamp/webhook';
 
@@ -205,6 +207,19 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         const chatTypeResult = await getChatType(payload.callback_url, config, log);
         log.info(`[${accountId}] Chat type: ${chatTypeResult.chatType}${chatTypeResult.chatName ? ` (${chatTypeResult.chatName})` : ''}`);
 
+        // Resolve per-user session key via OpenClaw's routing layer.
+        // This respects the configured dmScope (e.g. "per-channel-peer") and
+        // produces a key like "agent:main:basecamp:direct:1007299143", ensuring
+        // each user gets an isolated session. Without this, the fallback
+        // resolveSessionKey() tries normalizeE164() on a URL → returns "unknown"
+        // → all direct-type users share "agent:main:main" (session contamination).
+        const route = resolveAgentRoute({
+          cfg,
+          channel: 'basecamp',
+          peer: { kind: chatTypeResult.chatType !== 'unknown' ? chatTypeResult.chatType : 'direct', id: payload.creator.id.toString() },
+        });
+        log.info(`[${accountId}] Resolved session key: ${route.sessionKey}`);
+
         // Build context payload for OpenClaw
         // OpenClaw expects Body/RawBody/CommandBody (not Text)
         // Create unique session per person by combining callback_url + creator.id
@@ -226,6 +241,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           Channel: 'basecamp',
           Provider: 'basecamp', // Required for OpenClaw to find channel dock and buildToolContext
           Surface: 'basecamp', // Alternative lookup field
+          SessionKey: route.sessionKey, // Explicit per-user session key — bypasses broken normalizeE164 fallback
           AccountId: accountId,
           // Basecamp webhooks are inherently authenticated (creator is verified by Basecamp)
           CommandAuthorized: true,

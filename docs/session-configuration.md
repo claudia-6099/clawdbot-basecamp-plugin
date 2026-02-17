@@ -172,17 +172,16 @@ openclaw sessions delete agent:main:main
 ### How Session Routing Works
 
 1. **Webhook arrives** with user information: `callback_url`, `creator.id`, `creator.name`, etc.
-2. **Monitor constructs From field**: `${callback_url}:user:${creator.id}`
-3. **OpenClaw routing layer reads `session.dmScope`** from global config
-4. **Session key is constructed** based on dmScope:
-   - If `dmScope: "main"` → uses `agent:main:main` (ignores From field)
-   - If `dmScope: "per-channel-peer"` → uses From field to create unique key
-5. **Message is routed** to the appropriate session
-6. **Plugin processes message** in the context of that session
+2. **Monitor calls `resolveAgentRoute()`** with `channel: 'basecamp'` and `peer: { kind: 'direct', id: creator.id }`
+3. **`resolveAgentRoute` reads `session.dmScope`** from global config and computes the session key
+4. **Session key is set explicitly** via the `SessionKey` field in the context payload — this bypasses the legacy `resolveSessionKey()` fallback (which incorrectly tries to parse URLs as phone numbers via `normalizeE164`)
+5. **Message is routed** to the per-user session
+
+This is the same approach used by WhatsApp, Slack, Discord, and other built-in channels.
 
 ### Why This is a Global Config
 
-Session routing is an **architectural decision** in OpenClaw core, not a plugin-specific feature. The `session.dmScope` setting affects how ALL channels route direct messages, not just Basecamp.
+The `session.dmScope` setting in `~/.openclaw/openclaw.json` controls how `resolveAgentRoute()` constructs session keys for ALL channels, not just Basecamp.
 
 This design allows consistent session behavior across all messaging platforms (Slack, Discord, Basecamp, etc.).
 
