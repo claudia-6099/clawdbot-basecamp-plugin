@@ -223,9 +223,23 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         // Build context payload for OpenClaw
         // OpenClaw expects Body/RawBody/CommandBody (not Text)
         // Create unique session per person by combining callback_url + creator.id
-        // Inject user info at the start of the message so the agent knows who's writing
-        const userPrefix = `[${payload.creator.name} | ${payload.creator.email_address}]: `;
-        const bodyWithUser = userPrefix + payload.command;
+        // Build structured sender identity context for the agent prompt
+        const senderContext: Record<string, unknown> = {
+          name: payload.creator.name,
+          email: payload.creator.email_address,
+          id: payload.creator.id,
+        };
+        if (payload.creator.title) senderContext.title = payload.creator.title;
+        if (payload.creator.company?.name) senderContext.company = payload.creator.company.name;
+        if (payload.creator.admin) senderContext.admin = true;
+        if (payload.creator.owner) senderContext.owner = true;
+
+        const senderContextBlock = [
+          'Sender identity (verified by Basecamp):',
+          '```json',
+          JSON.stringify(senderContext, null, 2),
+          '```',
+        ].join('\n');
 
         const ctxPayload: Record<string, unknown> = {
           From: sessionId, // Unique session per person
@@ -235,7 +249,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           UserName: payload.creator.name, // Keep for backward compatibility
           UserEmail: payload.creator.email_address,
           UserId: payload.creator.id.toString(),
-          Body: bodyWithUser,
+          Body: payload.command,
           RawBody: payload.command,
           CommandBody: payload.command,
           Channel: 'basecamp',
@@ -250,6 +264,8 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
           // Custom Basecamp fields for tools/scripts to access
           BasecampCallbackUrl: payload.callback_url, // For progress reporting
           To: payload.callback_url, // Standard target field
+          // Structured sender identity — OpenClaw appends this as an "Untrusted context" block
+          UntrustedContext: [senderContextBlock],
         };
         if (chatTypeResult.chatName) {
           ctxPayload.ChatName = chatTypeResult.chatName;
