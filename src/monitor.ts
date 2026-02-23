@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { BasecampConfig } from './types.js';
 import { sendToBasecamp } from './send.js';
 import { getChatType } from './chat-detection.js';
+import { getRandomThinkingIndicator } from './thinking-verbs.js';
 
 interface Logger {
   info: (...args: unknown[]) => void;
@@ -279,7 +280,7 @@ export async function monitorBasecampProvider(params: MonitorParams): Promise<()
         if (!isCommand) {
           thinkingTimer = setTimeout(() => {
             thinkingTimer = undefined;
-            sendToBasecamp(payload.callback_url, '<em>\uD83E\uDDE0 Thinking...</em>').catch((err) => {
+            sendToBasecamp(payload.callback_url, getRandomThinkingIndicator()).catch((err) => {
               log.warn(`[${accountId}] Failed to send thinking indicator`, { error: err });
             });
           }, 3000);

@@ -72,6 +72,10 @@ export function formatAsHtml(text: string): string {
   
   // Convert *italic* to <em>
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Convert _italic_ to <em> (used by OpenClaw reasoning blocks)
+  // Match underscores at line boundaries to avoid false positives in URLs/identifiers
+  html = html.replace(/(^|<br>|[\s(])_([^_\n]+?)_(?=[\s,.;:!?)<]|<br>|$)/gm, '$1<em>$2</em>');
   
   // Convert [link](url) to <a>
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
